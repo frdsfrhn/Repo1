@@ -78,15 +78,13 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Container(
-                  width: 64,
-                  height: 64,
-                  decoration: BoxDecoration(
-                    color: AppTheme.primary,
-                    borderRadius: BorderRadius.circular(16),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: const Image(
+                    image: AssetImage('assets/branding/icon.png'),
+                    width: 64,
+                    height: 64,
                   ),
-                  child: const Icon(Icons.home_work_rounded,
-                      size: 34, color: Colors.white),
                 ),
                 const SizedBox(height: 20),
                 Text(
