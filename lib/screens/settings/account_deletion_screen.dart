@@ -1,6 +1,7 @@
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 
+import '../../core/constants.dart';
 import '../../core/theme.dart';
 import '../../widgets/loading_overlay.dart';
 
@@ -37,8 +38,9 @@ class _AccountDeletionScreenState extends State<AccountDeletionScreen> {
       _error = null;
     });
     try {
-      final callable =
-          FirebaseFunctions.instance.httpsCallable('deleteAccount');
+      final callable = FirebaseFunctions.instanceFor(
+        region: AppConstants.cloudFunctionsRegion,
+      ).httpsCallable('deleteAccount');
       await callable.call<void>();
       // Firebase Auth user is deleted server-side, so authStateChanges()
       // fires and the app router returns to the login screen on its own.

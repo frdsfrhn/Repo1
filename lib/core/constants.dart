@@ -22,4 +22,11 @@ class AppConstants {
   static const String supportEmail = 'support@example.com'; // TODO: replace
 
   static const Duration maxRecordingDuration = Duration(minutes: 10);
+
+  /// Must match the `region` passed to `setGlobalOptions()` in
+  /// functions/src/index.ts. Cloud Functions callables default to
+  /// us-central1 on the client side regardless of where the function is
+  /// actually deployed — every `FirebaseFunctions` reference in the app
+  /// needs to specify this region explicitly, or calls silently 404.
+  static const String cloudFunctionsRegion = 'asia-southeast1';
 }

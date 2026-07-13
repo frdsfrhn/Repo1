@@ -1,5 +1,7 @@
 import 'package:cloud_functions/cloud_functions.dart';
 
+import '../core/constants.dart';
+
 /// Triggers the server-side voice-note pipeline: speech-to-text, then AI
 /// transcript cleanup, then deletion of the raw audio (PDPA data
 /// minimization). All of this happens in the `processVoiceNote` Cloud
@@ -11,7 +13,9 @@ import 'package:cloud_functions/cloud_functions.dart';
 /// gate alone can't be trusted to protect the AI cost driver.
 class TranscriptionService {
   TranscriptionService({FirebaseFunctions? functions})
-      : _functions = functions ?? FirebaseFunctions.instance;
+      : _functions = functions ??
+            FirebaseFunctions.instanceFor(
+                region: AppConstants.cloudFunctionsRegion);
 
   final FirebaseFunctions _functions;
 
