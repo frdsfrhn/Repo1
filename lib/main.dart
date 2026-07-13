@@ -34,8 +34,16 @@ Future<void> main() async {
             subscriptionService: subscriptionService,
           ),
         ),
-        ChangeNotifierProvider<SubscriptionProvider>(
+        // Derives SubscriptionProvider's state from AppAuthProvider's
+        // profile stream. Using a proxy provider (rather than calling
+        // updateProfile() from inside a widget's build() method) means the
+        // update happens through Provider's own change-dispatch machinery,
+        // not synchronously during another widget's build — which Flutter
+        // disallows ("setState() or markNeedsBuild() called during build").
+        ChangeNotifierProxyProvider<AppAuthProvider, SubscriptionProvider>(
           create: (_) => SubscriptionProvider(),
+          update: (_, auth, subscriptionProvider) =>
+              subscriptionProvider!..updateProfile(auth.profile),
         ),
       ],
       child: const PropertyAgentApp(),
