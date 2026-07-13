@@ -32,7 +32,7 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
       _errorMessage = null;
     });
 
-    final auth = context.read<AuthProvider>();
+    final auth = context.read<AppAuthProvider>();
     final phoneNumber = _phoneController.text.trim();
 
     await auth.authService.startPhoneVerification(
@@ -59,7 +59,7 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
       onAutoVerified: (_) {
         if (!mounted) return;
         setState(() => _isSubmitting = false);
-        // authStateChanges() in AuthProvider will pick this up and the
+        // authStateChanges() in AppAuthProvider will pick this up and the
         // app router moves on automatically.
       },
     );

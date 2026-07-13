@@ -96,7 +96,7 @@ class _LeadFormScreenState extends State<LeadFormScreen> {
     setState(() => _isSaving = true);
 
     final leadProvider = context.read<LeadProvider>();
-    final agentId = context.read<AuthProvider>().firebaseUser!.uid;
+    final agentId = context.read<AppAuthProvider>().firebaseUser!.uid;
 
     try {
       if (widget.isEditing) {

@@ -39,9 +39,8 @@ class SubscriptionService {
 
   Future<Offerings> getOfferings() => Purchases.getOfferings();
 
-  Future<CustomerInfo> purchasePackage(Package package) async {
-    final result = await Purchases.purchasePackage(package);
-    return result.customerInfo;
+  Future<CustomerInfo> purchasePackage(Package package) {
+    return Purchases.purchasePackage(package);
   }
 
   Future<CustomerInfo> restorePurchases() => Purchases.restorePurchases();

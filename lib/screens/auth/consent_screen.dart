@@ -21,8 +21,8 @@ class _ConsentScreenState extends State<ConsentScreen> {
 
   Future<void> _accept() async {
     setState(() => _isSubmitting = true);
-    await context.read<AuthProvider>().acceptPdpaConsent();
-    // AuthProvider's profile stream will update hasGivenConsent and the
+    await context.read<AppAuthProvider>().acceptPdpaConsent();
+    // AppAuthProvider's profile stream will update hasGivenConsent and the
     // app router will move on automatically.
   }
 

@@ -41,14 +41,14 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
       _errorMessage = null;
     });
     try {
-      final auth = context.read<AuthProvider>();
+      final auth = context.read<AppAuthProvider>();
       await auth.authService.submitOtp(
         verificationId: widget.verificationId,
         smsCode: code,
         phoneNumber: widget.phoneNumber,
       );
       if (!mounted) return;
-      // AuthProvider's authStateChanges listener drives the router from
+      // AppAuthProvider's authStateChanges listener drives the router from
       // here — just pop back to the root and let it rebuild.
       Navigator.of(context).popUntil((route) => route.isFirst);
     } on FirebaseAuthException catch (e) {

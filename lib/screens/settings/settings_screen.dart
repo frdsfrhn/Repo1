@@ -13,7 +13,7 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final auth = context.watch<AuthProvider>();
+    final auth = context.watch<AppAuthProvider>();
     final sub = context.watch<SubscriptionProvider>();
 
     return Scaffold(

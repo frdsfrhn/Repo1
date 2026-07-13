@@ -10,8 +10,13 @@ import '../services/subscription_service.dart';
 /// Tracks Firebase auth state plus the agent's Firestore profile
 /// (consent status, trial/subscription status) as one observable stream
 /// the router and screens can key off of.
-class AuthProvider extends ChangeNotifier {
-  AuthProvider({
+///
+/// Named `AppAuthProvider`, not `AuthProvider` — `package:firebase_auth`
+/// already exports a public class literally called `AuthProvider` (the
+/// federated-auth-provider base type), and importing both in the same
+/// file is a real, common collision otherwise.
+class AppAuthProvider extends ChangeNotifier {
+  AppAuthProvider({
     required AuthService authService,
     required SubscriptionService subscriptionService,
   })  : _authService = authService,

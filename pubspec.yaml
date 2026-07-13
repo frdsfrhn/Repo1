@@ -21,13 +21,16 @@ dependencies:
   # State management
   provider: ^6.1.2
 
-  # Voice capture
-  record: ^5.1.2
+  # Voice capture — pinned to 7.x: earlier 5.x resolutions can pull in a
+  # record_linux/record_platform_interface combo that doesn't compile
+  # (record_linux missing startStream/hasPermission overrides). 7.x publishes
+  # its platform packages together so they stay in sync.
+  record: ^7.1.1
   permission_handler: ^11.3.1
   path_provider: ^2.1.4
 
   # Subscriptions / paywall
-  purchases_flutter: ^8.4.4
+  purchases_flutter: ^8.11.0
 
   # Utilities
   intl: ^0.19.0

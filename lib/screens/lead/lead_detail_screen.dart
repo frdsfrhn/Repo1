@@ -21,7 +21,7 @@ class LeadDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final agentId = context.read<AuthProvider>().firebaseUser!.uid;
+    final agentId = context.read<AppAuthProvider>().firebaseUser!.uid;
 
     return ChangeNotifierProvider<ActivityProvider>(
       create: (_) => ActivityProvider(
