@@ -56,9 +56,12 @@ class FirestoreService {
   /// even if a transcription job never finished.
   Future<void> deleteLeadCascade(
     String leadId, {
+    required String agentId,
     required Future<void> Function(String audioUrl) deleteAudio,
   }) async {
-    final activitiesSnap = await _activitiesRef(leadId).get();
+    final activitiesSnap = await _activitiesRef(leadId)
+        .where('agentId', isEqualTo: agentId)
+        .get();
     for (final doc in activitiesSnap.docs) {
       final audioUrl = doc.data()['audioUrl'] as String?;
       if (audioUrl != null && audioUrl.isNotEmpty) {
@@ -73,8 +76,17 @@ class FirestoreService {
     await batch.commit();
   }
 
-  Stream<List<Activity>> watchActivities(String leadId) {
+  /// `agentId` must be passed and filtered on here even though every
+  /// activity under this lead already belongs to the caller — Firestore's
+  /// security rules can't validate a *list* query against a rule that
+  /// reads `resource.data.agentId` unless the query itself constrains
+  /// that field with a matching `where`. Without it, this fails with
+  /// `permission-denied` regardless of what the documents actually
+  /// contain, because Firestore has no way to prove every possible
+  /// result would satisfy the rule from the query shape alone.
+  Stream<List<Activity>> watchActivities(String leadId, String agentId) {
     return _activitiesRef(leadId)
+        .where('agentId', isEqualTo: agentId)
         .orderBy('timestamp', descending: true)
         .snapshots()
         .map((snap) =>

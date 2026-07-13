@@ -19,7 +19,7 @@ class ActivityProvider extends ChangeNotifier {
   })  : _firestoreService = firestoreService,
         _storageService = storageService,
         _transcriptionService = transcriptionService {
-    _sub = _firestoreService.watchActivities(leadId).listen((activities) {
+    _sub = _firestoreService.watchActivities(leadId, agentId).listen((activities) {
       _activities = activities;
       _isLoading = false;
       notifyListeners();

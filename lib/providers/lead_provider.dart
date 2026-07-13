@@ -108,6 +108,7 @@ class LeadProvider extends ChangeNotifier {
   Future<void> deleteLead(String leadId) {
     return _firestoreService.deleteLeadCascade(
       leadId,
+      agentId: _agentId,
       deleteAudio: _storageService.deleteByGsUrl,
     );
   }

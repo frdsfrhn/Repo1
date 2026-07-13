@@ -19,7 +19,7 @@
     },
     {
       "collectionGroup": "activities",
-      "queryScope": "COLLECTION_GROUP",
+      "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "agentId", "order": "ASCENDING" },
         { "fieldPath": "timestamp", "order": "DESCENDING" }
