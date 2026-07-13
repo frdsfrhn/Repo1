@@ -1,0 +1,43 @@
+name: property_agent_app
+description: "Property agent CRM — leads, voice notes, AI-cleaned transcripts, subscriptions."
+publish_to: "none"
+version: 0.1.0
+
+environment:
+  sdk: ">=3.6.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+
+  # Firebase
+  firebase_core: ^3.6.0
+  firebase_auth: ^5.3.1
+  cloud_firestore: ^5.4.4
+  firebase_storage: ^12.3.4
+  cloud_functions: ^5.1.4
+
+  # State management
+  provider: ^6.1.2
+
+  # Voice capture
+  record: ^5.1.2
+  permission_handler: ^11.3.1
+  path_provider: ^2.1.4
+
+  # Subscriptions / paywall
+  purchases_flutter: ^8.4.4
+
+  # Utilities
+  intl: ^0.19.0
+  uuid: ^4.5.1
+  url_launcher: ^6.3.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true

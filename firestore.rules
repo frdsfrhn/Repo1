@@ -1,0 +1,37 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(agentId) {
+      return isSignedIn() && request.auth.uid == agentId;
+    }
+
+    // Agent profile — one document per authenticated agent, keyed by uid.
+    // PDPA: an agent may only ever read or write their own profile.
+    match /users/{uid} {
+      allow read, update, delete: if isOwner(uid);
+      allow create: if isOwner(uid) && request.resource.data.agentId == uid;
+    }
+
+    // Leads — every document carries an agentId. No cross-agent access,
+    // enforced here (not just in app logic) per PDPA requirement.
+    match /leads/{leadId} {
+      allow read, update, delete: if isOwner(resource.data.agentId);
+      allow create: if isOwner(request.resource.data.agentId);
+
+      // Activity log (voice/typed notes) for a lead. Inherits the parent
+      // lead's owner via a denormalized agentId on the activity doc itself,
+      // so this rule doesn't need a get() lookup against the parent.
+      match /activities/{activityId} {
+        allow read, update, delete: if isOwner(resource.data.agentId);
+        allow create: if isOwner(request.resource.data.agentId)
+                       && request.resource.data.agentId == get(/databases/$(database)/documents/leads/$(leadId)).data.agentId;
+      }
+    }
+  }
+}

@@ -1,0 +1,15 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Voice note recordings, stored only transiently for transcription:
+    // /voice_recordings/{agentId}/{leadId}/{activityId}.m4a
+    // A Cloud Function deletes the raw audio once the transcript is
+    // produced (PDPA data-minimization requirement) — see
+    // functions/src/transcribeAudio.ts.
+    match /voice_recordings/{agentId}/{allPaths=**} {
+      allow read, write: if request.auth != null && request.auth.uid == agentId;
+    }
+  }
+}
