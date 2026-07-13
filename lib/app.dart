@@ -55,7 +55,7 @@ class PropertyAgentApp extends StatelessWidget {
 
   Widget _shell(Widget home) {
     return MaterialApp(
-      title: 'Property Agent',
+      title: 'PropertyMate',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       home: home,

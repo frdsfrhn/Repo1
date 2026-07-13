@@ -27,6 +27,7 @@ class _LeadFormScreenState extends State<LeadFormScreen> {
   late final TextEditingController _phoneController;
   late final TextEditingController _propertyNameController;
   late final TextEditingController _propertyAddressController;
+  late final TextEditingController _telegramUrlController;
   late final TextEditingController _dealValueController;
   late final TextEditingController _commissionPercentController;
   late final TextEditingController _yieldController;
@@ -46,6 +47,8 @@ class _LeadFormScreenState extends State<LeadFormScreen> {
         TextEditingController(text: lead?.propertyName ?? '');
     _propertyAddressController =
         TextEditingController(text: lead?.propertyAddress ?? '');
+    _telegramUrlController =
+        TextEditingController(text: lead?.telegramUrl ?? '');
     _dealValueController = TextEditingController(
         text: lead == null || lead.dealValue == 0 ? '' : lead.dealValue.toString());
     _commissionPercentController = TextEditingController(
@@ -69,6 +72,7 @@ class _LeadFormScreenState extends State<LeadFormScreen> {
     _phoneController.dispose();
     _propertyNameController.dispose();
     _propertyAddressController.dispose();
+    _telegramUrlController.dispose();
     _dealValueController.dispose();
     _commissionPercentController.dispose();
     _yieldController.dispose();
@@ -105,6 +109,7 @@ class _LeadFormScreenState extends State<LeadFormScreen> {
           phoneNumber: _phoneController.text.trim(),
           propertyName: _propertyNameController.text.trim(),
           propertyAddress: _propertyAddressController.text.trim(),
+          telegramUrl: _telegramUrlController.text.trim(),
           dealType: _dealType,
           commissionPercent: _commissionPercent,
           dealValue: _dealValue,
@@ -124,6 +129,7 @@ class _LeadFormScreenState extends State<LeadFormScreen> {
           phoneNumber: _phoneController.text.trim(),
           propertyName: _propertyNameController.text.trim(),
           propertyAddress: _propertyAddressController.text.trim(),
+          telegramUrl: _telegramUrlController.text.trim(),
           dealType: _dealType,
           commissionPercent: _commissionPercent,
           dealValue: _dealValue,
@@ -189,6 +195,15 @@ class _LeadFormScreenState extends State<LeadFormScreen> {
                 decoration: const InputDecoration(
                     labelText: 'Property address (optional)'),
                 textCapitalization: TextCapitalization.sentences,
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _telegramUrlController,
+                decoration: const InputDecoration(
+                  labelText: 'Telegram URL (optional)',
+                  hintText: 'https://t.me/username',
+                ),
+                keyboardType: TextInputType.url,
               ),
               const SizedBox(height: 20),
               Text('Deal type', style: Theme.of(context).textTheme.labelLarge),
