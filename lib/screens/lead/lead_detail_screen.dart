@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/formatters.dart';
 import '../../core/theme.dart';
@@ -225,10 +226,46 @@ class _SummaryCard extends StatelessWidget {
                 lead.expectedYieldPercent != null)
               _row('Expected yield', Formatters.percent(lead.expectedYieldPercent!)),
             _row('Next follow-up', Formatters.date(lead.nextFollowUpDate)),
+            if (lead.phoneNumber.isNotEmpty || lead.telegramUrl.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  if (lead.phoneNumber.isNotEmpty)
+                    OutlinedButton.icon(
+                      onPressed: () => _launch(
+                        context,
+                        'https://wa.me/'
+                        '${Formatters.whatsAppDigits(lead.phoneNumber)}',
+                      ),
+                      icon: const Icon(Icons.chat, color: Color(0xFF25D366)),
+                      label: const Text('WhatsApp'),
+                    ),
+                  if (lead.telegramUrl.isNotEmpty)
+                    OutlinedButton.icon(
+                      onPressed: () => _launch(context, lead.telegramUrl),
+                      icon: const Icon(Icons.send, color: Color(0xFF229ED9)),
+                      label: const Text('Telegram'),
+                    ),
+                ],
+              ),
+            ],
           ],
         ),
       ),
     );
+  }
+
+  Future<void> _launch(BuildContext context, String url) async {
+    final uri = Uri.tryParse(url);
+    final launched = uri != null &&
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!launched && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not open the app for this link.')),
+      );
+    }
   }
 
   Widget _row(String label, String value) {

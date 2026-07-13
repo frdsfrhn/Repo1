@@ -1,4 +1,4 @@
-# Property Agent App
+# PropertyMate
 
 A Flutter + Firebase CRM for property agents: a lead dashboard, voice-note
 capture with AI-cleaned transcripts, phone-number login, and a

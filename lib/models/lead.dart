@@ -63,6 +63,7 @@ class Lead {
     required this.phoneNumber,
     required this.propertyName,
     this.propertyAddress = '',
+    this.telegramUrl = '',
     required this.dealType,
     required this.commissionPercent,
     required this.dealValue,
@@ -79,6 +80,12 @@ class Lead {
   final String phoneNumber;
   final String propertyName;
   final String propertyAddress;
+
+  /// Full URL an agent pastes in (e.g. `https://t.me/someusername`), opened
+  /// directly via url_launcher — not validated beyond being non-empty, since
+  /// Telegram usernames/invite links come in several valid URL shapes.
+  final String telegramUrl;
+
   final DealType dealType;
 
   /// Commission percentage, e.g. 3.0 for 3%.
@@ -107,6 +114,7 @@ class Lead {
       phoneNumber: data['phoneNumber'] as String? ?? '',
       propertyName: data['propertyName'] as String? ?? '',
       propertyAddress: data['propertyAddress'] as String? ?? '',
+      telegramUrl: data['telegramUrl'] as String? ?? '',
       dealType: DealTypeX.fromWire(data['dealType'] as String?),
       commissionPercent: (data['commissionPercent'] as num?)?.toDouble() ?? 0,
       dealValue: (data['dealValue'] as num?)?.toDouble() ?? 0,
@@ -125,6 +133,7 @@ class Lead {
       'phoneNumber': phoneNumber,
       'propertyName': propertyName,
       'propertyAddress': propertyAddress,
+      'telegramUrl': telegramUrl,
       'dealType': dealType.wireValue,
       'commissionPercent': commissionPercent,
       'dealValue': dealValue,
@@ -144,6 +153,7 @@ class Lead {
     String? phoneNumber,
     String? propertyName,
     String? propertyAddress,
+    String? telegramUrl,
     DealType? dealType,
     double? commissionPercent,
     double? dealValue,
@@ -159,6 +169,7 @@ class Lead {
       phoneNumber: phoneNumber ?? this.phoneNumber,
       propertyName: propertyName ?? this.propertyName,
       propertyAddress: propertyAddress ?? this.propertyAddress,
+      telegramUrl: telegramUrl ?? this.telegramUrl,
       dealType: dealType ?? this.dealType,
       commissionPercent: commissionPercent ?? this.commissionPercent,
       dealValue: dealValue ?? this.dealValue,

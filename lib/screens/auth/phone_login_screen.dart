@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/loading_overlay.dart';
 import 'otp_verify_screen.dart';
@@ -77,9 +78,23 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    color: AppTheme.primary,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: const Icon(Icons.home_work_rounded,
+                      size: 34, color: Colors.white),
+                ),
+                const SizedBox(height: 20),
                 Text(
-                  'Welcome',
-                  style: Theme.of(context).textTheme.headlineMedium,
+                  'PropertyMate',
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.primary,
+                      ),
                 ),
                 const SizedBox(height: 8),
                 Text(
