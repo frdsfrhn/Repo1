@@ -1,0 +1,18 @@
+<svg width="400" height="400" viewBox="0 0 400 400" role="img" xmlns="http://www.w3.org/2000/svg">
+<title>PropertyMate app icon</title>
+<desc>A square app icon with a rounded background gradient from indigo to teal, containing an abstract house-and-pin mark with a small AI spark accent.</desc>
+<defs>
+<linearGradient id="iconGrad" x1="0" y1="0" x2="1" y2="1">
+<stop offset="0%" stop-color="#4F46E5"/>
+<stop offset="100%" stop-color="#14B8A6"/>
+</linearGradient>
+</defs>
+
+<rect x="0" y="0" width="400" height="400" rx="88" fill="url(#iconGrad)"/>
+
+<path d="M138 232 L200 176 L262 232 L262 284 L214 284 L214 252 L186 252 L186 284 L138 284 Z" fill="#FFFFFF"/>
+
+<circle cx="272" cy="118" r="24" fill="#FFFFFF"/>
+<path d="M272 96 L272 106 M272 130 L272 140 M250 118 L260 118 M284 118 L294 118 M255.5 101.5 L262.5 108.5 M281.5 127.5 L288.5 134.5 M255.5 134.5 L262.5 127.5 M281.5 108.5 L288.5 101.5" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"/>
+
+</svg>
