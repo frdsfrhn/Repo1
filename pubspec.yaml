@@ -51,10 +51,12 @@ flutter:
 
 # Run `dart run flutter_launcher_icons` after `flutter pub get` to (re)generate
 # the native Android/iOS launcher icons from assets/branding/icon*.png.
+# Source: assets/branding/logo-highres.svg (vector) — regenerate the PNGs
+# under assets/branding/ from that SVG if the logo ever changes.
 flutter_launcher_icons:
   android: true
   ios: true
   image_path: "assets/branding/icon.png"
   remove_alpha_ios: true
-  adaptive_icon_background: "#317FC5"
+  adaptive_icon_background: "assets/branding/icon_background.png"
   adaptive_icon_foreground: "assets/branding/icon_foreground.png"
