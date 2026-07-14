@@ -29,7 +29,8 @@ verify against).
 - Node.js 20+ (for Cloud Functions)
 - A RevenueCat account, with Apple/Google Play in-app products configured
 - An Anthropic API key (for transcript cleanup)
-- Xcode (iOS) and/or Android Studio (Android), for device testing
+- Xcode (iOS) and/or Android Studio (Android), for device testing — for a
+  from-scratch macOS/Xcode setup, see `docs/IOS_MACBOOK_SETUP.md`
 
 ## 1. Generate native scaffolding
 
@@ -134,6 +135,9 @@ prompt uses the OS default wording, and Google Play's Data Safety form is
 where you separately declare the mic usage — see step 7.)
 
 ## 5. RevenueCat setup
+
+See `docs/REVENUECAT_SETUP.md` for the full step-by-step (same content,
+more detail, plus a verification checklist) — summary:
 
 1. Create a RevenueCat project, add your iOS and Android apps.
 2. In App Store Connect / Google Play Console, create your subscription
@@ -242,7 +246,8 @@ lib/
   widgets/       shared empty-state / loading widgets
 functions/       Cloud Functions (TypeScript): transcription, AI cleanup,
                  account deletion, RevenueCat webhook
-docs/            data model reference, privacy policy, Play Store submission guide
+docs/            data model reference, privacy policy, Play Store submission
+                 guide, RevenueCat setup, iOS/macOS setup
 firestore.rules, firestore.indexes.json, storage.rules, firebase.json
 ```
 
