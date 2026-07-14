@@ -16,13 +16,17 @@ class AppConstants {
   /// RevenueCat offering identifier shown on the paywall.
   static const String defaultOfferingId = 'default';
 
-  // Rendered from docs/PRIVACY_POLICY.md on GitHub — works as a public
-  // policy URL since the repo is public, but points at this feature
-  // branch. Once merged, repoint this at the default-branch blob URL (or
-  // a proper GitHub Pages / custom-domain page) so it survives the branch
+  // raw.githubusercontent.com, not github.com/.../blob/... — GitHub's blob
+  // viewer is a JS-heavy page that can render blank in stripped-down
+  // in-app browsers (confirmed: blank/black in the emulator's browser) and
+  // could do the same to an automated Play Store review crawler. Raw
+  // content is plain text, needs no JS, and always renders. Works as a
+  // public URL since the repo is public, but points at this feature
+  // branch — once merged, repoint at the default-branch raw URL (or a
+  // proper GitHub Pages / custom-domain page) so it survives the branch
   // being deleted.
   static const String privacyPolicyUrl =
-      'https://github.com/frdsfrhn/Repo1/blob/claude/flutter-firebase-mobile-app-h7fh9p/docs/PRIVACY_POLICY.md';
+      'https://raw.githubusercontent.com/frdsfrhn/Repo1/claude/flutter-firebase-mobile-app-h7fh9p/docs/PRIVACY_POLICY.md';
 
   static const String supportEmail = 'frdsfrhn@gmail.com';
 
