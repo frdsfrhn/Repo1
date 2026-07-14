@@ -169,12 +169,18 @@ or into an untracked `--dart-define-from-file=env.json` (see
 
 ## 7. Before you submit to the app stores
 
-Straight from the MVP checklist — none of this is automatic:
+Straight from the MVP checklist — none of this is automatic. See
+`docs/PLAY_STORE_SUBMISSION.md` for the full Google Play walkthrough
+(signing, store listing draft, data-safety form, and — importantly — the
+realistic timeline given Google's mandatory closed-testing period for new
+developer accounts).
 
-- [ ] Update `AppConstants.privacyPolicyUrl` and `AppConstants.supportEmail`
-      in `lib/core/constants.dart` with real values, and publish a real
-      privacy policy (`docs/PRIVACY_POLICY_TEMPLATE.md` is a starting
-      draft — have it reviewed, it is **not** legal advice).
+- [x] `AppConstants.privacyPolicyUrl` and `AppConstants.supportEmail` in
+      `lib/core/constants.dart` point at real values —
+      `docs/PRIVACY_POLICY.md` is hosted via GitHub (repo is public) and
+      linked directly; **still has one placeholder** (`[TODO: your name
+      or company name]` in §intro) to fill in, and have it reviewed —
+      it is **not** legal advice.
 - [ ] Fill out Google Play's **Data Safety form** and Apple's
       **App Privacy** section accurately: this app collects voice
       recordings (transient) and contact info (client phone numbers), and
@@ -236,7 +242,7 @@ lib/
   widgets/       shared empty-state / loading widgets
 functions/       Cloud Functions (TypeScript): transcription, AI cleanup,
                  account deletion, RevenueCat webhook
-docs/            data model reference, privacy policy template
+docs/            data model reference, privacy policy, Play Store submission guide
 firestore.rules, firestore.indexes.json, storage.rules, firebase.json
 ```
 
@@ -254,6 +260,10 @@ firestore.rules, firestore.indexes.json, storage.rules, firebase.json
 - [x] Trial and paywall behave correctly
 - [ ] Tested on a real iPhone and a real Android device — *you need to do
       this*
-- [ ] Privacy policy and store listings ready — *draft provided, needs
-      your review + real URLs*
+- [x] Privacy policy hosted at a real URL — *one placeholder left, see
+      §7 above*
+- [ ] Store listing assets (screenshots, feature graphic) — *copy drafted
+      in `docs/PLAY_STORE_SUBMISSION.md`, assets need the real running app*
+- [ ] Closed testing track running (20+ testers, 14 days) — *required by
+      Google before production, see `docs/PLAY_STORE_SUBMISSION.md`*
 - [ ] Submitted to both stores

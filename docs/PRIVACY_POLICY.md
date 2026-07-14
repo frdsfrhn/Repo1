@@ -1,21 +1,14 @@
-# Privacy Policy — template
+# Privacy Policy for PropertyMate
 
-**This is a starting draft, not legal advice.** Have a lawyer familiar
-with Malaysia's Personal Data Protection Act (PDPA) — and, if you'll have
-users outside Malaysia, GDPR/CCPA — review it before publishing. Host the
-final version at a stable public URL and put that URL in
-`lib/core/constants.dart` (`AppConstants.privacyPolicyUrl`) and in both
-app store listings, per the MVP checklist's App Store requirements.
+**Last updated:** 14 July 2026
 
----
+PropertyMate ("the app") is operated by **[TODO: your name or company
+name]** ("we", "us"). This policy explains what data we collect from you
+as a property agent using the app, why, and how you can control it.
 
-## Privacy Policy for [App Name]
-
-**Last updated:** [date]
-
-[App Name] ("the app") is operated by [Your Name / Company Name]
-("we", "us"). This policy explains what data we collect from you as a
-property agent using the app, why, and how you can control it.
+> This is a starting draft, not legal advice. If you'll have users outside
+> Malaysia, have this reviewed against GDPR/CCPA as well as Malaysia's
+> Personal Data Protection Act (PDPA) before relying on it long-term.
 
 ### 1. Information we collect
 
@@ -23,6 +16,8 @@ property agent using the app, why, and how you can control it.
 - **Your clients' data, which you enter:** prospect names, phone numbers,
   property names and addresses, deal financials (commission percentage,
   deal value, expected rental yield), and follow-up dates.
+- **Property photos:** if you attach a photo of a listing flyer/one-pager
+  to a lead, that image is stored and shown back to you within the app.
 - **Voice recordings:** if you record a voice note about a lead, the
   audio is uploaded and transcribed automatically. **The raw audio is
   deleted as soon as a transcript is produced** — typically within a few
@@ -45,10 +40,11 @@ property agent using the app, why, and how you can control it.
 
 ### 3. Who can see your data
 
-Your leads, notes, and recordings are visible only to your account. We
-enforce this at the database level (Firestore security rules), not just
-in the app's user interface — another agent's account cannot read or
-write your data even if there were a bug in the app itself.
+Your leads, notes, photos, and recordings are visible only to your
+account. We enforce this at the database level (Firestore and Cloud
+Storage security rules), not just in the app's user interface — another
+agent's account cannot read or write your data even if there were a bug
+in the app itself.
 
 ### 4. Third-party processors
 
@@ -67,20 +63,21 @@ write your data even if there were a bug in the app itself.
 
 - **Voice recordings** are deleted automatically once transcribed — see
   §1.
-- **You can delete an individual lead** (and its full activity log and
-  any recording) at any time from within the app. This is permanent.
+- **You can delete an individual lead** (and its full activity log, any
+  attached photo, and any recording) at any time from within the app.
+  This is permanent.
 - **You can delete your entire account** from Settings → Delete account.
   This permanently removes your profile, every lead you created, every
-  activity note, and any recordings. This does not automatically cancel
-  an active subscription — cancel that separately through the App Store
-  or Play Store.
+  activity note, every attached photo, and any recordings. This does not
+  automatically cancel an active subscription — cancel that separately
+  through the App Store or Play Store.
 - If you delete your account, deletion is immediate, not a soft-disable.
 
 ### 6. Your rights under PDPA
 
 You may request access to, correction of, or deletion of your personal
-data by contacting us at [support email]. Most of this you can already do
-yourself in-app (see §5).
+data by contacting us at frdsfrhn@gmail.com. Most of this you can already
+do yourself in-app (see §5).
 
 ### 7. Children
 
@@ -94,5 +91,4 @@ notify you in-app for material changes.
 
 ### 9. Contact
 
-[Support email]
-[Company name and address, if applicable]
+frdsfrhn@gmail.com
