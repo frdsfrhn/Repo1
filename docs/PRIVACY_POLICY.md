@@ -2,8 +2,7 @@
 
 **Last updated:** 14 July 2026
 
-PropertyMate ("the app") is operated by **[TODO: your name or company
-name]** ("we", "us"). This policy explains what data we collect from you
+PropertyMate ("the app") is operated by leadeluna enterprise ("we", "us"). This policy explains what data we collect from you
 as a property agent using the app, why, and how you can control it.
 
 > This is a starting draft, not legal advice. If you'll have users outside
