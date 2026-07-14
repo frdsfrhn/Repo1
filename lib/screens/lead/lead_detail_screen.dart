@@ -275,6 +275,28 @@ class _SummaryCard extends StatelessWidget {
                     ],
                   ),
                 ],
+                if (lead.ownerName.isNotEmpty || lead.ownerPhone.isNotEmpty) ...[
+                  const Divider(height: 28),
+                  Text('Property owner',
+                      style: Theme.of(context).textTheme.labelLarge),
+                  const SizedBox(height: 8),
+                  if (lead.ownerName.isNotEmpty)
+                    _row('Name', lead.ownerName),
+                  if (lead.ownerPhone.isNotEmpty)
+                    _row('Phone', lead.ownerPhone),
+                  if (lead.ownerPhone.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    OutlinedButton.icon(
+                      onPressed: () => _launch(
+                        context,
+                        'https://wa.me/'
+                        '${Formatters.whatsAppDigits(lead.ownerPhone)}',
+                      ),
+                      icon: const Icon(Icons.chat, color: Color(0xFF25D366)),
+                      label: const Text('WhatsApp owner'),
+                    ),
+                  ],
+                ],
               ],
             ),
           ),

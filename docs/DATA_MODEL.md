@@ -47,6 +47,7 @@ the field.
 | `propertyAddress` | string | Optional |
 | `telegramUrl` | string | Optional — full URL (e.g. `https://t.me/username`), opened directly via `url_launcher` from lead detail |
 | `propertyImageUrl` | string | Optional — download URL for a one-pager/flyer photo (`property_images/{agentId}/{leadId}/one_pager.jpg` in Storage), shown on the dashboard tile and lead detail |
+| `ownerName` / `ownerPhone` | string | Optional — the property owner/landlord, distinct from `prospectName`/`phoneNumber` (the client). Not in the original locked data model; added for a WhatsApp-the-owner action on lead detail |
 | `dealType` | `"rent" \| "purchase"` | Single toggle, not free text, per spec |
 | `commissionPercent` | number | e.g. `3.0` for 3% |
 | `dealValue` | number | See "assumption" above |

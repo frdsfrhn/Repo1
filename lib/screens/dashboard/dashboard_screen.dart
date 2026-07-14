@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/formatters.dart';
+import '../../core/theme.dart';
 import '../../models/lead.dart';
 import '../../providers/lead_provider.dart';
 import '../../widgets/app_empty_state.dart';
@@ -64,6 +66,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       body: Column(
         children: [
           const TrialBanner(),
+          if (!leadProvider.isLoading && !leadProvider.isEmpty)
+            _StatusSummaryRow(provider: leadProvider),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
             child: TextField(
@@ -95,6 +99,96 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
         icon: const Icon(Icons.add),
         label: const Text('New lead'),
+      ),
+    );
+  }
+}
+
+/// Lead count + total commission per status, tap a card to filter the list
+/// below by that status.
+class _StatusSummaryRow extends StatelessWidget {
+  const _StatusSummaryRow({required this.provider});
+
+  final LeadProvider provider;
+
+  @override
+  Widget build(BuildContext context) {
+    final summary = provider.summaryByStatus;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      child: Row(
+        children: [
+          for (final status in LeadStatus.values) ...[
+            if (status != LeadStatus.values.first) const SizedBox(width: 8),
+            Expanded(
+              child: _StatusSummaryCard(
+                status: status,
+                summary: summary[status]!,
+                selected: provider.statusFilter == status,
+                onTap: () => provider.setStatusFilter(
+                  provider.statusFilter == status ? null : status,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _StatusSummaryCard extends StatelessWidget {
+  const _StatusSummaryCard({
+    required this.status,
+    required this.summary,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final LeadStatus status;
+  final LeadStatusSummary summary;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = AppTheme.statusColor(status.wireValue);
+    return InkWell(
+      borderRadius: BorderRadius.circular(10),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: selected ? 0.18 : 0.08),
+          borderRadius: BorderRadius.circular(10),
+          border: selected ? Border.all(color: color, width: 1.5) : null,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              status.label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: color,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 2),
+            Text(
+              '${summary.count}',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            Text(
+              Formatters.currency(summary.totalCommission),
+              style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
       ),
     );
   }

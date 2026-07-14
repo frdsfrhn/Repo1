@@ -32,6 +32,8 @@ class _LeadFormScreenState extends State<LeadFormScreen> {
   late final TextEditingController _propertyNameController;
   late final TextEditingController _propertyAddressController;
   late final TextEditingController _telegramUrlController;
+  late final TextEditingController _ownerNameController;
+  late final TextEditingController _ownerPhoneController;
   late final TextEditingController _dealValueController;
   late final TextEditingController _commissionPercentController;
   late final TextEditingController _yieldController;
@@ -57,6 +59,9 @@ class _LeadFormScreenState extends State<LeadFormScreen> {
         TextEditingController(text: lead?.propertyAddress ?? '');
     _telegramUrlController =
         TextEditingController(text: lead?.telegramUrl ?? '');
+    _ownerNameController = TextEditingController(text: lead?.ownerName ?? '');
+    _ownerPhoneController =
+        TextEditingController(text: lead?.ownerPhone ?? '');
     _dealValueController = TextEditingController(
         text: lead == null || lead.dealValue == 0 ? '' : lead.dealValue.toString());
     _commissionPercentController = TextEditingController(
@@ -81,6 +86,8 @@ class _LeadFormScreenState extends State<LeadFormScreen> {
     _propertyNameController.dispose();
     _propertyAddressController.dispose();
     _telegramUrlController.dispose();
+    _ownerNameController.dispose();
+    _ownerPhoneController.dispose();
     _dealValueController.dispose();
     _commissionPercentController.dispose();
     _yieldController.dispose();
@@ -136,6 +143,8 @@ class _LeadFormScreenState extends State<LeadFormScreen> {
           propertyName: _propertyNameController.text.trim(),
           propertyAddress: _propertyAddressController.text.trim(),
           telegramUrl: _telegramUrlController.text.trim(),
+          ownerName: _ownerNameController.text.trim(),
+          ownerPhone: _ownerPhoneController.text.trim(),
           dealType: _dealType,
           commissionPercent: _commissionPercent,
           dealValue: _dealValue,
@@ -170,6 +179,8 @@ class _LeadFormScreenState extends State<LeadFormScreen> {
           propertyName: _propertyNameController.text.trim(),
           propertyAddress: _propertyAddressController.text.trim(),
           telegramUrl: _telegramUrlController.text.trim(),
+          ownerName: _ownerNameController.text.trim(),
+          ownerPhone: _ownerPhoneController.text.trim(),
           dealType: _dealType,
           commissionPercent: _commissionPercent,
           dealValue: _dealValue,
@@ -197,6 +208,8 @@ class _LeadFormScreenState extends State<LeadFormScreen> {
             propertyAddress: lead.propertyAddress,
             telegramUrl: lead.telegramUrl,
             propertyImageUrl: url,
+            ownerName: lead.ownerName,
+            ownerPhone: lead.ownerPhone,
             dealType: lead.dealType,
             commissionPercent: lead.commissionPercent,
             dealValue: lead.dealValue,
@@ -279,6 +292,21 @@ class _LeadFormScreenState extends State<LeadFormScreen> {
                 existingUrl: _imageRemoved ? '' : widget.lead?.propertyImageUrl ?? '',
                 onPick: _pickPropertyImage,
                 onRemove: _removePropertyImage,
+              ),
+              const SizedBox(height: 20),
+              Text('Property owner (optional)',
+                  style: Theme.of(context).textTheme.labelLarge),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _ownerNameController,
+                decoration: const InputDecoration(labelText: 'Owner name'),
+                textCapitalization: TextCapitalization.words,
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _ownerPhoneController,
+                decoration: const InputDecoration(labelText: 'Owner phone'),
+                keyboardType: TextInputType.phone,
               ),
               const SizedBox(height: 20),
               Text('Deal type', style: Theme.of(context).textTheme.labelLarge),

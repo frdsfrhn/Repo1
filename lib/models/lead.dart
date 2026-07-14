@@ -65,6 +65,8 @@ class Lead {
     this.propertyAddress = '',
     this.telegramUrl = '',
     this.propertyImageUrl = '',
+    this.ownerName = '',
+    this.ownerPhone = '',
     required this.dealType,
     required this.commissionPercent,
     required this.dealValue,
@@ -90,6 +92,13 @@ class Lead {
   /// Download URL for the property's one-pager/flyer photo, if the agent
   /// has attached one — see StorageService.uploadPropertyImage.
   final String propertyImageUrl;
+
+  /// Property owner/landlord's contact — the other party in the deal, as
+  /// opposed to [prospectName]/[phoneNumber] (the client the agent is
+  /// representing). Not in the original locked data model; added as an
+  /// optional pair since agents need to reach owners directly too.
+  final String ownerName;
+  final String ownerPhone;
 
   final DealType dealType;
 
@@ -121,6 +130,8 @@ class Lead {
       propertyAddress: data['propertyAddress'] as String? ?? '',
       telegramUrl: data['telegramUrl'] as String? ?? '',
       propertyImageUrl: data['propertyImageUrl'] as String? ?? '',
+      ownerName: data['ownerName'] as String? ?? '',
+      ownerPhone: data['ownerPhone'] as String? ?? '',
       dealType: DealTypeX.fromWire(data['dealType'] as String?),
       commissionPercent: (data['commissionPercent'] as num?)?.toDouble() ?? 0,
       dealValue: (data['dealValue'] as num?)?.toDouble() ?? 0,
@@ -141,6 +152,8 @@ class Lead {
       'propertyAddress': propertyAddress,
       'telegramUrl': telegramUrl,
       'propertyImageUrl': propertyImageUrl,
+      'ownerName': ownerName,
+      'ownerPhone': ownerPhone,
       'dealType': dealType.wireValue,
       'commissionPercent': commissionPercent,
       'dealValue': dealValue,
@@ -163,6 +176,8 @@ class Lead {
     String? telegramUrl,
     String? propertyImageUrl,
     bool clearPropertyImage = false,
+    String? ownerName,
+    String? ownerPhone,
     DealType? dealType,
     double? commissionPercent,
     double? dealValue,
@@ -182,6 +197,8 @@ class Lead {
       propertyImageUrl: clearPropertyImage
           ? ''
           : (propertyImageUrl ?? this.propertyImageUrl),
+      ownerName: ownerName ?? this.ownerName,
+      ownerPhone: ownerPhone ?? this.ownerPhone,
       dealType: dealType ?? this.dealType,
       commissionPercent: commissionPercent ?? this.commissionPercent,
       dealValue: dealValue ?? this.dealValue,

@@ -8,6 +8,13 @@ import '../services/storage_service.dart';
 
 enum LeadSortOrder { followUpDate, recentlyAdded, name }
 
+class LeadStatusSummary {
+  const LeadStatusSummary({required this.count, required this.totalCommission});
+
+  final int count;
+  final double totalCommission;
+}
+
 /// Owns the dashboard's lead list: the live Firestore stream, plus
 /// client-side search/sort/status-filter over it. See
 /// FirestoreService.watchLeads for why search stays client-side in v1.
@@ -53,6 +60,25 @@ class LeadProvider extends ChangeNotifier {
   /// by id, so an active dashboard search/status filter can't hide a lead
   /// the user has already navigated into.
   List<Lead> get allLeads => _allLeads;
+
+  /// Lead count and total commission per status, across the whole
+  /// portfolio (not affected by the dashboard's search/filter) — backs
+  /// the dashboard's summary row. Not part of the original locked data
+  /// model; a quick aggregation over data that already exists per lead.
+  Map<LeadStatus, LeadStatusSummary> get summaryByStatus {
+    final map = {
+      for (final status in LeadStatus.values)
+        status: const LeadStatusSummary(count: 0, totalCommission: 0),
+    };
+    for (final lead in _allLeads) {
+      final current = map[lead.status]!;
+      map[lead.status] = LeadStatusSummary(
+        count: current.count + 1,
+        totalCommission: current.totalCommission + lead.commissionValue,
+      );
+    }
+    return map;
+  }
 
   List<Lead> get visibleLeads {
     var leads = _allLeads.where((lead) {
