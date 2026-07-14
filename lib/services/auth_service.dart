@@ -87,12 +87,16 @@ class AuthService {
         (doc) => doc.exists ? AppUser.fromFirestore(doc) : null);
   }
 
+  /// Uses set-with-merge, not update — [_ensureUserDocument]'s write and
+  /// the consent-screen route both race off the same sign-in event, so
+  /// this can be called before that document exists yet. update() would
+  /// throw not-found in that window; set-with-merge is safe either way.
   Future<void> recordPdpaConsent() async {
     final uid = currentUser?.uid;
     if (uid == null) return;
-    await _usersRef.doc(uid).update({
+    await _usersRef.doc(uid).set({
       'pdpaConsentAt': FieldValue.serverTimestamp(),
-    });
+    }, SetOptions(merge: true));
   }
 
   Future<void> signOut() => _auth.signOut();
