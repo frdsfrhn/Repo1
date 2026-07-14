@@ -25,19 +25,21 @@ class LeadListTile extends StatelessWidget {
           padding: const EdgeInsets.all(14),
           child: Row(
             children: [
-              CircleAvatar(
-                radius: 22,
-                backgroundColor: statusColor.withValues(alpha: 0.15),
-                child: Text(
-                  lead.prospectName.isNotEmpty
-                      ? lead.prospectName[0].toUpperCase()
-                      : '?',
-                  style: TextStyle(
-                    color: statusColor,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
+              lead.propertyImageUrl.isNotEmpty
+                  ? ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: Image.network(
+                        lead.propertyImageUrl,
+                        width: 44,
+                        height: 44,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => _InitialAvatar(
+                          lead: lead,
+                          statusColor: statusColor,
+                        ),
+                      ),
+                    )
+                  : _InitialAvatar(lead: lead, statusColor: statusColor),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
@@ -93,6 +95,25 @@ class LeadListTile extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _InitialAvatar extends StatelessWidget {
+  const _InitialAvatar({required this.lead, required this.statusColor});
+
+  final Lead lead;
+  final Color statusColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return CircleAvatar(
+      radius: 22,
+      backgroundColor: statusColor.withValues(alpha: 0.15),
+      child: Text(
+        lead.prospectName.isNotEmpty ? lead.prospectName[0].toUpperCase() : '?',
+        style: TextStyle(color: statusColor, fontWeight: FontWeight.bold),
       ),
     );
   }

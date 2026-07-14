@@ -11,5 +11,13 @@ service firebase.storage {
     match /voice_recordings/{agentId}/{allPaths=**} {
       allow read, write: if request.auth != null && request.auth.uid == agentId;
     }
+
+    // Property one-pager images, one per lead: agents attach a photo of a
+    // listing flyer so they (and anyone they forward the link to) know at a
+    // glance which property a lead is about.
+    // /property_images/{agentId}/{leadId}/one_pager.jpg
+    match /property_images/{agentId}/{allPaths=**} {
+      allow read, write: if request.auth != null && request.auth.uid == agentId;
+    }
   }
 }

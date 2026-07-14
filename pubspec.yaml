@@ -29,6 +29,10 @@ dependencies:
   permission_handler: ^11.3.1
   path_provider: ^2.1.4
 
+  # Property one-pager photo picker — uses the system photo picker on
+  # Android 13+/iOS, which needs no runtime storage/photos permission.
+  image_picker: ^1.1.2
+
   # Subscriptions / paywall
   purchases_flutter: ^8.11.0
 

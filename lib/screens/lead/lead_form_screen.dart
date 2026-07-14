@@ -1,11 +1,15 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/formatters.dart';
 import '../../models/lead.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/lead_provider.dart';
+import '../../services/storage_service.dart';
 import '../../widgets/loading_overlay.dart';
 
 /// Create or edit a lead. Passing an existing [lead] switches to edit mode.
@@ -36,6 +40,10 @@ class _LeadFormScreenState extends State<LeadFormScreen> {
   late LeadStatus _status;
   DateTime? _nextFollowUpDate;
   bool _isSaving = false;
+
+  final _storageService = StorageService();
+  File? _pickedImage;
+  bool _imageRemoved = false;
 
   @override
   void initState() {
@@ -95,6 +103,24 @@ class _LeadFormScreenState extends State<LeadFormScreen> {
     if (picked != null) setState(() => _nextFollowUpDate = picked);
   }
 
+  Future<void> _pickPropertyImage() async {
+    final picked = await ImagePicker()
+        .pickImage(source: ImageSource.gallery, imageQuality: 80, maxWidth: 1600);
+    if (picked != null) {
+      setState(() {
+        _pickedImage = File(picked.path);
+        _imageRemoved = false;
+      });
+    }
+  }
+
+  void _removePropertyImage() {
+    setState(() {
+      _pickedImage = null;
+      _imageRemoved = true;
+    });
+  }
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isSaving = true);
@@ -104,7 +130,7 @@ class _LeadFormScreenState extends State<LeadFormScreen> {
 
     try {
       if (widget.isEditing) {
-        final updated = widget.lead!.copyWith(
+        var updated = widget.lead!.copyWith(
           prospectName: _nameController.text.trim(),
           phoneNumber: _phoneController.text.trim(),
           propertyName: _propertyNameController.text.trim(),
@@ -120,6 +146,20 @@ class _LeadFormScreenState extends State<LeadFormScreen> {
           nextFollowUpDate: _nextFollowUpDate,
           status: _status,
         );
+        if (_pickedImage != null) {
+          final url = await _storageService.uploadPropertyImage(
+            file: _pickedImage!,
+            agentId: agentId,
+            leadId: widget.lead!.id,
+          );
+          updated = updated.copyWith(propertyImageUrl: url);
+        } else if (_imageRemoved && widget.lead!.propertyImageUrl.isNotEmpty) {
+          await _storageService.deletePropertyImage(
+            agentId: agentId,
+            leadId: widget.lead!.id,
+          );
+          updated = updated.copyWith(clearPropertyImage: true);
+        }
         await leadProvider.updateLead(updated);
       } else {
         final lead = Lead(
@@ -141,7 +181,32 @@ class _LeadFormScreenState extends State<LeadFormScreen> {
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         );
-        await leadProvider.createLead(lead);
+        final newId = await leadProvider.createLead(lead);
+        if (_pickedImage != null) {
+          final url = await _storageService.uploadPropertyImage(
+            file: _pickedImage!,
+            agentId: agentId,
+            leadId: newId,
+          );
+          await leadProvider.updateLead(Lead(
+            id: newId,
+            agentId: lead.agentId,
+            prospectName: lead.prospectName,
+            phoneNumber: lead.phoneNumber,
+            propertyName: lead.propertyName,
+            propertyAddress: lead.propertyAddress,
+            telegramUrl: lead.telegramUrl,
+            propertyImageUrl: url,
+            dealType: lead.dealType,
+            commissionPercent: lead.commissionPercent,
+            dealValue: lead.dealValue,
+            expectedYieldPercent: lead.expectedYieldPercent,
+            nextFollowUpDate: lead.nextFollowUpDate,
+            status: lead.status,
+            createdAt: lead.createdAt,
+            updatedAt: lead.updatedAt,
+          ));
+        }
       }
       if (mounted) Navigator.of(context).pop();
     } catch (e) {
@@ -204,6 +269,16 @@ class _LeadFormScreenState extends State<LeadFormScreen> {
                   hintText: 'https://t.me/username',
                 ),
                 keyboardType: TextInputType.url,
+              ),
+              const SizedBox(height: 20),
+              Text('Property one-pager (optional)',
+                  style: Theme.of(context).textTheme.labelLarge),
+              const SizedBox(height: 8),
+              _PropertyImagePicker(
+                pickedFile: _pickedImage,
+                existingUrl: _imageRemoved ? '' : widget.lead?.propertyImageUrl ?? '',
+                onPick: _pickPropertyImage,
+                onRemove: _removePropertyImage,
               ),
               const SizedBox(height: 20),
               Text('Deal type', style: Theme.of(context).textTheme.labelLarge),
@@ -298,6 +373,78 @@ class _LeadFormScreenState extends State<LeadFormScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Shows the current one-pager photo (freshly picked, previously saved, or
+/// neither) with pick/remove controls.
+class _PropertyImagePicker extends StatelessWidget {
+  const _PropertyImagePicker({
+    required this.pickedFile,
+    required this.existingUrl,
+    required this.onPick,
+    required this.onRemove,
+  });
+
+  final File? pickedFile;
+  final String existingUrl;
+  final VoidCallback onPick;
+  final VoidCallback onRemove;
+
+  bool get _hasImage => pickedFile != null || existingUrl.isNotEmpty;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_hasImage) {
+      return OutlinedButton.icon(
+        onPressed: onPick,
+        icon: const Icon(Icons.add_photo_alternate_outlined),
+        label: const Text('Add property photo'),
+      );
+    }
+
+    final image = pickedFile != null
+        ? Image.file(pickedFile!, height: 160, width: double.infinity, fit: BoxFit.cover)
+        : Image.network(existingUrl,
+            height: 160, width: double.infinity, fit: BoxFit.cover);
+
+    return Stack(
+      children: [
+        ClipRRect(borderRadius: BorderRadius.circular(12), child: image),
+        Positioned(
+          top: 6,
+          right: 6,
+          child: Row(
+            children: [
+              _RoundIconButton(icon: Icons.edit, onPressed: onPick),
+              const SizedBox(width: 6),
+              _RoundIconButton(icon: Icons.close, onPressed: onRemove),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _RoundIconButton extends StatelessWidget {
+  const _RoundIconButton({required this.icon, required this.onPressed});
+
+  final IconData icon;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.black54,
+      shape: const CircleBorder(),
+      child: IconButton(
+        icon: Icon(icon, size: 18, color: Colors.white),
+        onPressed: onPressed,
+        constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+        padding: EdgeInsets.zero,
       ),
     );
   }

@@ -64,6 +64,7 @@ class Lead {
     required this.propertyName,
     this.propertyAddress = '',
     this.telegramUrl = '',
+    this.propertyImageUrl = '',
     required this.dealType,
     required this.commissionPercent,
     required this.dealValue,
@@ -85,6 +86,10 @@ class Lead {
   /// directly via url_launcher — not validated beyond being non-empty, since
   /// Telegram usernames/invite links come in several valid URL shapes.
   final String telegramUrl;
+
+  /// Download URL for the property's one-pager/flyer photo, if the agent
+  /// has attached one — see StorageService.uploadPropertyImage.
+  final String propertyImageUrl;
 
   final DealType dealType;
 
@@ -115,6 +120,7 @@ class Lead {
       propertyName: data['propertyName'] as String? ?? '',
       propertyAddress: data['propertyAddress'] as String? ?? '',
       telegramUrl: data['telegramUrl'] as String? ?? '',
+      propertyImageUrl: data['propertyImageUrl'] as String? ?? '',
       dealType: DealTypeX.fromWire(data['dealType'] as String?),
       commissionPercent: (data['commissionPercent'] as num?)?.toDouble() ?? 0,
       dealValue: (data['dealValue'] as num?)?.toDouble() ?? 0,
@@ -134,6 +140,7 @@ class Lead {
       'propertyName': propertyName,
       'propertyAddress': propertyAddress,
       'telegramUrl': telegramUrl,
+      'propertyImageUrl': propertyImageUrl,
       'dealType': dealType.wireValue,
       'commissionPercent': commissionPercent,
       'dealValue': dealValue,
@@ -154,6 +161,8 @@ class Lead {
     String? propertyName,
     String? propertyAddress,
     String? telegramUrl,
+    String? propertyImageUrl,
+    bool clearPropertyImage = false,
     DealType? dealType,
     double? commissionPercent,
     double? dealValue,
@@ -170,6 +179,9 @@ class Lead {
       propertyName: propertyName ?? this.propertyName,
       propertyAddress: propertyAddress ?? this.propertyAddress,
       telegramUrl: telegramUrl ?? this.telegramUrl,
+      propertyImageUrl: clearPropertyImage
+          ? ''
+          : (propertyImageUrl ?? this.propertyImageUrl),
       dealType: dealType ?? this.dealType,
       commissionPercent: commissionPercent ?? this.commissionPercent,
       dealValue: dealValue ?? this.dealValue,

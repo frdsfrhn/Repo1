@@ -177,84 +177,124 @@ class _SummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (lead.propertyImageUrl.isNotEmpty)
+            GestureDetector(
+              onTap: () => _showFullImage(context, lead.propertyImageUrl),
+              child: Image.network(
+                lead.propertyImageUrl,
+                height: 180,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+              ),
+            ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Text(
-                    lead.propertyName,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppTheme.statusColor(lead.status.wireValue)
-                        .withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    lead.status.label,
-                    style: TextStyle(
-                      color: AppTheme.statusColor(lead.status.wireValue),
-                      fontWeight: FontWeight.w600,
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        lead.propertyName,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
                     ),
-                  ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppTheme.statusColor(lead.status.wireValue)
+                            .withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        lead.status.label,
+                        style: TextStyle(
+                          color: AppTheme.statusColor(lead.status.wireValue),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
+                if (lead.propertyAddress.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    lead.propertyAddress,
+                    style: TextStyle(color: Colors.grey.shade600),
+                  ),
+                ],
+                const Divider(height: 28),
+                _row('Phone', lead.phoneNumber),
+                _row('Deal type', lead.dealType.label),
+                _row(
+                    lead.dealType == DealType.rent
+                        ? 'Rental value'
+                        : 'Purchase price',
+                    Formatters.currency(lead.dealValue)),
+                _row(
+                    'Commission',
+                    '${Formatters.percent(lead.commissionPercent)} '
+                    '(${Formatters.currency(lead.commissionValue)})'),
+                if (lead.dealType == DealType.purchase &&
+                    lead.expectedYieldPercent != null)
+                  _row('Expected yield',
+                      Formatters.percent(lead.expectedYieldPercent!)),
+                _row('Next follow-up', Formatters.date(lead.nextFollowUpDate)),
+                if (lead.phoneNumber.isNotEmpty ||
+                    lead.telegramUrl.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      if (lead.phoneNumber.isNotEmpty)
+                        OutlinedButton.icon(
+                          onPressed: () => _launch(
+                            context,
+                            'https://wa.me/'
+                            '${Formatters.whatsAppDigits(lead.phoneNumber)}',
+                          ),
+                          icon:
+                              const Icon(Icons.chat, color: Color(0xFF25D366)),
+                          label: const Text('WhatsApp'),
+                        ),
+                      if (lead.telegramUrl.isNotEmpty)
+                        OutlinedButton.icon(
+                          onPressed: () => _launch(context, lead.telegramUrl),
+                          icon:
+                              const Icon(Icons.send, color: Color(0xFF229ED9)),
+                          label: const Text('Telegram'),
+                        ),
+                    ],
+                  ),
+                ],
               ],
             ),
-            if (lead.propertyAddress.isNotEmpty) ...[
-              const SizedBox(height: 2),
-              Text(
-                lead.propertyAddress,
-                style: TextStyle(color: Colors.grey.shade600),
-              ),
-            ],
-            const Divider(height: 28),
-            _row('Phone', lead.phoneNumber),
-            _row('Deal type', lead.dealType.label),
-            _row(lead.dealType == DealType.rent ? 'Rental value' : 'Purchase price',
-                Formatters.currency(lead.dealValue)),
-            _row('Commission', '${Formatters.percent(lead.commissionPercent)} '
-                '(${Formatters.currency(lead.commissionValue)})'),
-            if (lead.dealType == DealType.purchase &&
-                lead.expectedYieldPercent != null)
-              _row('Expected yield', Formatters.percent(lead.expectedYieldPercent!)),
-            _row('Next follow-up', Formatters.date(lead.nextFollowUpDate)),
-            if (lead.phoneNumber.isNotEmpty || lead.telegramUrl.isNotEmpty) ...[
-              const SizedBox(height: 4),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  if (lead.phoneNumber.isNotEmpty)
-                    OutlinedButton.icon(
-                      onPressed: () => _launch(
-                        context,
-                        'https://wa.me/'
-                        '${Formatters.whatsAppDigits(lead.phoneNumber)}',
-                      ),
-                      icon: const Icon(Icons.chat, color: Color(0xFF25D366)),
-                      label: const Text('WhatsApp'),
-                    ),
-                  if (lead.telegramUrl.isNotEmpty)
-                    OutlinedButton.icon(
-                      onPressed: () => _launch(context, lead.telegramUrl),
-                      icon: const Icon(Icons.send, color: Color(0xFF229ED9)),
-                      label: const Text('Telegram'),
-                    ),
-                ],
-              ),
-            ],
-          ],
-        ),
+          ),
+        ],
       ),
     );
+  }
+
+  static void _showFullImage(BuildContext context, String url) {
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => Scaffold(
+        backgroundColor: Colors.black,
+        appBar: AppBar(backgroundColor: Colors.black, foregroundColor: Colors.white),
+        body: Center(
+          child: InteractiveViewer(
+            child: Image.network(url),
+          ),
+        ),
+      ),
+    ));
   }
 
   Future<void> _launch(BuildContext context, String url) async {

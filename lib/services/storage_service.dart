@@ -25,6 +25,18 @@ class StorageService {
         .child('$activityId.wav');
   }
 
+  Reference _propertyImageRef({
+    required String agentId,
+    required String leadId,
+  }) {
+    return _storage
+        .ref()
+        .child('property_images')
+        .child(agentId)
+        .child(leadId)
+        .child('one_pager.jpg');
+  }
+
   /// Uploads a local recording and returns its gs:// storage path (not a
   /// download URL — the app never needs a public URL, only the Cloud
   /// Function that transcribes it, which reads via the Admin SDK).
@@ -49,6 +61,31 @@ class StorageService {
       await ref.delete();
     } on FirebaseException catch (e) {
       // object-not-found just means it was already cleaned up — ignore.
+      if (e.code != 'object-not-found') rethrow;
+    }
+  }
+
+  /// Uploads (or overwrites) the one property-flyer image for a lead and
+  /// returns its download URL — unlike voice recordings, this is displayed
+  /// directly in the app, so the client needs a fetchable URL, not just a
+  /// gs:// path.
+  Future<String> uploadPropertyImage({
+    required File file,
+    required String agentId,
+    required String leadId,
+  }) async {
+    final ref = _propertyImageRef(agentId: agentId, leadId: leadId);
+    await ref.putFile(file, SettableMetadata(contentType: 'image/jpeg'));
+    return ref.getDownloadURL();
+  }
+
+  Future<void> deletePropertyImage({
+    required String agentId,
+    required String leadId,
+  }) async {
+    try {
+      await _propertyImageRef(agentId: agentId, leadId: leadId).delete();
+    } on FirebaseException catch (e) {
       if (e.code != 'object-not-found') rethrow;
     }
   }
