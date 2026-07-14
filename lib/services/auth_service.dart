@@ -35,7 +35,7 @@ class AuthService {
       verificationCompleted: (PhoneAuthCredential credential) async {
         try {
           final result = await _auth.signInWithCredential(credential);
-          await _ensureUserDocument(result.user!, phoneNumber);
+          await ensureUserDocument(result.user!, phoneNumber: phoneNumber);
           onAutoVerified?.call(result);
         } on FirebaseAuthException catch (e) {
           onError(e.message ?? 'Automatic verification failed.');
@@ -61,18 +61,25 @@ class AuthService {
       smsCode: smsCode,
     );
     final result = await _auth.signInWithCredential(credential);
-    await _ensureUserDocument(result.user!, phoneNumber);
+    await ensureUserDocument(result.user!, phoneNumber: phoneNumber);
     return result;
   }
 
-  Future<void> _ensureUserDocument(User user, String phoneNumber) async {
+  /// Idempotent: safe to call on every sign-in, not just the first one.
+  /// [AppAuthProvider] also awaits this directly off the raw
+  /// `authStateChanges()` event (not just from the login call sites above)
+  /// — that stream is Firebase's own internal broadcast, which can fire
+  /// before our post-sign-in code here even runs, so the login call sites
+  /// alone can't guarantee this document exists before the rest of the app
+  /// reacts to being signed in.
+  Future<void> ensureUserDocument(User user, {String? phoneNumber}) async {
     final docRef = _usersRef.doc(user.uid);
     final snapshot = await docRef.get();
     if (!snapshot.exists) {
       final appUser = AppUser(
         uid: user.uid,
         agentId: user.uid,
-        phoneNumber: phoneNumber,
+        phoneNumber: phoneNumber ?? user.phoneNumber ?? '',
         createdAt: DateTime.now(),
         trialStartedAt: DateTime.now(),
       );
@@ -87,10 +94,10 @@ class AuthService {
         (doc) => doc.exists ? AppUser.fromFirestore(doc) : null);
   }
 
-  /// Uses set-with-merge, not update — [_ensureUserDocument]'s write and
-  /// the consent-screen route both race off the same sign-in event, so
-  /// this can be called before that document exists yet. update() would
-  /// throw not-found in that window; set-with-merge is safe either way.
+  /// Uses set-with-merge, not update, as defense in depth — by the time
+  /// this is reachable, AppAuthProvider has already awaited
+  /// [ensureUserDocument], but merge-set costs nothing extra and stays
+  /// correct even if that guarantee ever changes.
   Future<void> recordPdpaConsent() async {
     final uid = currentUser?.uid;
     if (uid == null) return;

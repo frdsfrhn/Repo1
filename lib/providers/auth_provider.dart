@@ -42,7 +42,7 @@ class AppAuthProvider extends ChangeNotifier {
 
   AuthService get authService => _authService;
 
-  void _onAuthChanged(User? user) {
+  Future<void> _onAuthChanged(User? user) async {
     _firebaseUser = user;
     _profileSub?.cancel();
 
@@ -53,6 +53,15 @@ class AppAuthProvider extends ChangeNotifier {
       notifyListeners();
       return;
     }
+
+    // Keep _isLoading true (splash screen showing) until the profile
+    // document is guaranteed to exist — otherwise the UI can briefly see
+    // "signed in, no profile yet" and misread that as "consent not given",
+    // routing to the consent screen before its own accept-consent write
+    // would even be valid. See AuthService.ensureUserDocument. No
+    // notifyListeners() happens until after this, so this await is
+    // invisible to the UI either way.
+    await _authService.ensureUserDocument(user);
 
     _subscriptionService.logIn(user.uid);
     _profileSub = _authService.watchCurrentUserProfile().listen((profile) {
