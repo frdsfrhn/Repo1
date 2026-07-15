@@ -72,6 +72,8 @@ class Lead {
     required this.dealValue,
     this.expectedYieldPercent,
     required this.nextFollowUpDate,
+    this.viewingDate,
+    this.moveInDate,
     required this.status,
     required this.createdAt,
     required this.updatedAt,
@@ -112,6 +114,17 @@ class Lead {
   final double? expectedYieldPercent;
 
   final DateTime? nextFollowUpDate;
+
+  /// When the prospect is scheduled to view the property. Single occurrence,
+  /// not a history — agents re-set this if a repeat/rescheduled viewing is
+  /// needed; the lead stays "Open" through this, no dedicated status.
+  final DateTime? viewingDate;
+
+  /// When the prospect is expected to (or did) move in. Not in the original
+  /// locked data model. No dedicated status either — agents mark the lead
+  /// "Closed" once move-in has happened, same as any other closed deal.
+  final DateTime? moveInDate;
+
   final LeadStatus status;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -137,6 +150,8 @@ class Lead {
       dealValue: (data['dealValue'] as num?)?.toDouble() ?? 0,
       expectedYieldPercent: (data['expectedYieldPercent'] as num?)?.toDouble(),
       nextFollowUpDate: (data['nextFollowUpDate'] as Timestamp?)?.toDate(),
+      viewingDate: (data['viewingDate'] as Timestamp?)?.toDate(),
+      moveInDate: (data['moveInDate'] as Timestamp?)?.toDate(),
       status: LeadStatusX.fromWire(data['status'] as String?),
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       updatedAt: (data['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
@@ -162,6 +177,10 @@ class Lead {
       'nextFollowUpDate': nextFollowUpDate == null
           ? null
           : Timestamp.fromDate(nextFollowUpDate!),
+      'viewingDate':
+          viewingDate == null ? null : Timestamp.fromDate(viewingDate!),
+      'moveInDate':
+          moveInDate == null ? null : Timestamp.fromDate(moveInDate!),
       'status': status.wireValue,
       'updatedAt': FieldValue.serverTimestamp(),
       if (isCreate) 'createdAt': FieldValue.serverTimestamp(),
@@ -184,6 +203,10 @@ class Lead {
     double? expectedYieldPercent,
     bool clearExpectedYield = false,
     DateTime? nextFollowUpDate,
+    DateTime? viewingDate,
+    bool clearViewingDate = false,
+    DateTime? moveInDate,
+    bool clearMoveInDate = false,
     LeadStatus? status,
   }) {
     return Lead(
@@ -206,6 +229,9 @@ class Lead {
           ? null
           : (expectedYieldPercent ?? this.expectedYieldPercent),
       nextFollowUpDate: nextFollowUpDate ?? this.nextFollowUpDate,
+      viewingDate:
+          clearViewingDate ? null : (viewingDate ?? this.viewingDate),
+      moveInDate: clearMoveInDate ? null : (moveInDate ?? this.moveInDate),
       status: status ?? this.status,
       createdAt: createdAt,
       updatedAt: updatedAt,

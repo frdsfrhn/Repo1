@@ -247,6 +247,10 @@ class _SummaryCard extends StatelessWidget {
                   _row('Expected yield',
                       Formatters.percent(lead.expectedYieldPercent!)),
                 _row('Next follow-up', Formatters.date(lead.nextFollowUpDate)),
+                if (lead.viewingDate != null)
+                  _row('Viewing date', Formatters.date(lead.viewingDate)),
+                if (lead.moveInDate != null)
+                  _row('Move-in date', Formatters.date(lead.moveInDate)),
                 if (lead.phoneNumber.isNotEmpty ||
                     lead.telegramUrl.isNotEmpty) ...[
                   const SizedBox(height: 4),

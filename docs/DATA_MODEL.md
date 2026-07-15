@@ -53,6 +53,8 @@ the field.
 | `dealValue` | number | See "assumption" above |
 | `expectedYieldPercent` | number \| null | Purchase leads only — cleared automatically when `dealType` is `rent` |
 | `nextFollowUpDate` | timestamp \| null | Drives dashboard sort order |
+| `viewingDate` | timestamp \| null | Optional — single scheduled/most-recent property viewing, not a history; re-set by the agent if a viewing is rescheduled or a repeat viewing is booked. Not in the original locked data model. Feeds the agenda screen; no dedicated status (lead stays "Open" through viewing) |
+| `moveInDate` | timestamp \| null | Optional — when the prospect is expected to (or did) move in. Not in the original locked data model. Feeds the agenda screen; no dedicated status (agent marks the lead "Closed" once move-in has happened) |
 | `status` | `"open" \| "follow_up_needed" \| "closed"` | |
 | `createdAt` / `updatedAt` | timestamp | |
 

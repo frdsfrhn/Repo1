@@ -41,6 +41,8 @@ class _LeadFormScreenState extends State<LeadFormScreen> {
   late DealType _dealType;
   late LeadStatus _status;
   DateTime? _nextFollowUpDate;
+  DateTime? _viewingDate;
+  DateTime? _moveInDate;
   bool _isSaving = false;
 
   final _storageService = StorageService();
@@ -73,6 +75,8 @@ class _LeadFormScreenState extends State<LeadFormScreen> {
     _dealType = lead?.dealType ?? DealType.rent;
     _status = lead?.status ?? LeadStatus.open;
     _nextFollowUpDate = lead?.nextFollowUpDate;
+    _viewingDate = lead?.viewingDate;
+    _moveInDate = lead?.moveInDate;
 
     for (final controller in [_dealValueController, _commissionPercentController]) {
       controller.addListener(() => setState(() {}));
@@ -100,14 +104,28 @@ class _LeadFormScreenState extends State<LeadFormScreen> {
   double get _computedCommission => _dealValue * (_commissionPercent / 100);
 
   Future<void> _pickFollowUpDate() async {
+    final picked = await _pickDate(_nextFollowUpDate);
+    if (picked != null) setState(() => _nextFollowUpDate = picked);
+  }
+
+  Future<void> _pickViewingDate() async {
+    final picked = await _pickDate(_viewingDate);
+    if (picked != null) setState(() => _viewingDate = picked);
+  }
+
+  Future<void> _pickMoveInDate() async {
+    final picked = await _pickDate(_moveInDate);
+    if (picked != null) setState(() => _moveInDate = picked);
+  }
+
+  Future<DateTime?> _pickDate(DateTime? current) {
     final now = DateTime.now();
-    final picked = await showDatePicker(
+    return showDatePicker(
       context: context,
-      initialDate: _nextFollowUpDate ?? now,
+      initialDate: current ?? now,
       firstDate: DateTime(now.year - 1),
       lastDate: DateTime(now.year + 3),
     );
-    if (picked != null) setState(() => _nextFollowUpDate = picked);
   }
 
   Future<void> _pickPropertyImage() async {
@@ -153,6 +171,10 @@ class _LeadFormScreenState extends State<LeadFormScreen> {
               : null,
           clearExpectedYield: _dealType == DealType.rent,
           nextFollowUpDate: _nextFollowUpDate,
+          viewingDate: _viewingDate,
+          clearViewingDate: _viewingDate == null,
+          moveInDate: _moveInDate,
+          clearMoveInDate: _moveInDate == null,
           status: _status,
         );
         if (_pickedImage != null) {
@@ -188,6 +210,8 @@ class _LeadFormScreenState extends State<LeadFormScreen> {
               ? double.tryParse(_yieldController.text)
               : null,
           nextFollowUpDate: _nextFollowUpDate,
+          viewingDate: _viewingDate,
+          moveInDate: _moveInDate,
           status: _status,
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
@@ -215,6 +239,8 @@ class _LeadFormScreenState extends State<LeadFormScreen> {
             dealValue: lead.dealValue,
             expectedYieldPercent: lead.expectedYieldPercent,
             nextFollowUpDate: lead.nextFollowUpDate,
+            viewingDate: lead.viewingDate,
+            moveInDate: lead.moveInDate,
             status: lead.status,
             createdAt: lead.createdAt,
             updatedAt: lead.updatedAt,
@@ -382,6 +408,24 @@ class _LeadFormScreenState extends State<LeadFormScreen> {
                 ),
               ),
               const SizedBox(height: 20),
+              Text('Viewing date (optional)',
+                  style: Theme.of(context).textTheme.labelLarge),
+              const SizedBox(height: 8),
+              _OptionalDatePickRow(
+                date: _viewingDate,
+                onPick: _pickViewingDate,
+                onClear: () => setState(() => _viewingDate = null),
+              ),
+              const SizedBox(height: 20),
+              Text('Move-in date (optional)',
+                  style: Theme.of(context).textTheme.labelLarge),
+              const SizedBox(height: 8),
+              _OptionalDatePickRow(
+                date: _moveInDate,
+                onPick: _pickMoveInDate,
+                onClear: () => setState(() => _moveInDate = null),
+              ),
+              const SizedBox(height: 20),
               Text('Status', style: Theme.of(context).textTheme.labelLarge),
               const SizedBox(height: 8),
               SegmentedButton<LeadStatus>(
@@ -452,6 +496,44 @@ class _PropertyImagePicker extends StatelessWidget {
             ],
           ),
         ),
+      ],
+    );
+  }
+}
+
+/// A date-pick button with a "Clear" action once a date is set — used for
+/// the optional viewing/move-in dates, which (unlike next-follow-up) agents
+/// need to be able to unset once a viewing's done or rescheduled.
+class _OptionalDatePickRow extends StatelessWidget {
+  const _OptionalDatePickRow({
+    required this.date,
+    required this.onPick,
+    required this.onClear,
+  });
+
+  final DateTime? date;
+  final VoidCallback onPick;
+  final VoidCallback onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: OutlinedButton.icon(
+            onPressed: onPick,
+            icon: const Icon(Icons.event),
+            label: Text(date == null ? 'Set a date' : Formatters.date(date)),
+          ),
+        ),
+        if (date != null) ...[
+          const SizedBox(width: 8),
+          IconButton(
+            onPressed: onClear,
+            icon: const Icon(Icons.close),
+            tooltip: 'Clear date',
+          ),
+        ],
       ],
     );
   }

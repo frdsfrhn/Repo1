@@ -6,6 +6,7 @@ import '../../core/theme.dart';
 import '../../models/lead.dart';
 import '../../providers/lead_provider.dart';
 import '../../widgets/app_empty_state.dart';
+import '../agenda/agenda_screen.dart';
 import '../lead/lead_detail_screen.dart';
 import '../lead/lead_form_screen.dart';
 import '../settings/settings_screen.dart';
@@ -36,6 +37,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
       appBar: AppBar(
         title: const Text('Leads'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.event_note_outlined),
+            tooltip: 'Agenda',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const AgendaScreen()),
+            ),
+          ),
           PopupMenuButton<LeadSortOrder>(
             icon: const Icon(Icons.sort),
             tooltip: 'Sort',

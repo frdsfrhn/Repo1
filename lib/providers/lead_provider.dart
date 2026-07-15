@@ -15,6 +15,33 @@ class LeadStatusSummary {
   final double totalCommission;
 }
 
+/// What kind of date-driven item this agenda entry is — follow-up, viewing,
+/// or move-in — so the agenda screen can label/group them.
+enum AgendaType { followUp, viewing, moveIn }
+
+extension AgendaTypeX on AgendaType {
+  String get label {
+    switch (this) {
+      case AgendaType.followUp:
+        return 'Follow-up';
+      case AgendaType.viewing:
+        return 'Viewing';
+      case AgendaType.moveIn:
+        return 'Move-in';
+    }
+  }
+}
+
+/// One dated item for the agenda screen — a lead paired with which of its
+/// date fields this entry came from.
+class AgendaEntry {
+  const AgendaEntry({required this.lead, required this.type, required this.date});
+
+  final Lead lead;
+  final AgendaType type;
+  final DateTime date;
+}
+
 /// Owns the dashboard's lead list: the live Firestore stream, plus
 /// client-side search/sort/status-filter over it. See
 /// FirestoreService.watchLeads for why search stays client-side in v1.
@@ -78,6 +105,38 @@ class LeadProvider extends ChangeNotifier {
       );
     }
     return map;
+  }
+
+  /// Every follow-up/viewing/move-in date across all leads, flattened into
+  /// one sorted list — backs the agenda screen ("what's on my plate"),
+  /// which buckets these into today/tomorrow/this week client-side.
+  List<AgendaEntry> get agendaEntries {
+    final entries = <AgendaEntry>[];
+    for (final lead in _allLeads) {
+      if (lead.nextFollowUpDate != null) {
+        entries.add(AgendaEntry(
+          lead: lead,
+          type: AgendaType.followUp,
+          date: lead.nextFollowUpDate!,
+        ));
+      }
+      if (lead.viewingDate != null) {
+        entries.add(AgendaEntry(
+          lead: lead,
+          type: AgendaType.viewing,
+          date: lead.viewingDate!,
+        ));
+      }
+      if (lead.moveInDate != null) {
+        entries.add(AgendaEntry(
+          lead: lead,
+          type: AgendaType.moveIn,
+          date: lead.moveInDate!,
+        ));
+      }
+    }
+    entries.sort((a, b) => a.date.compareTo(b.date));
+    return entries;
   }
 
   List<Lead> get visibleLeads {
