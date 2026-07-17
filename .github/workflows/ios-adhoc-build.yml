@@ -1,0 +1,49 @@
+name: iOS unsigned build (for local sideloading)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Xcode version
+        run: xcodebuild -version
+
+      - name: Flutter pub get
+        run: flutter pub get
+
+      - name: Generate iOS platform folder
+        run: flutter create --org com.frdsfrhn --project-name property_agent_app .
+
+      - name: Write GoogleService-Info.plist from secret
+        env:
+          GOOGLE_SERVICE_INFO_PLIST_BASE64: ${{ secrets.GOOGLE_SERVICE_INFO_PLIST_BASE64 }}
+        run: |
+          echo "$GOOGLE_SERVICE_INFO_PLIST_BASE64" | base64 --decode > ios/Runner/GoogleService-Info.plist
+
+      - name: Add microphone/photo library usage strings
+        run: |
+          /usr/libexec/PlistBuddy -c "Add :NSMicrophoneUsageDescription string 'We need your microphone to record voice notes about your leads, which are transcribed into text.'" ios/Runner/Info.plist
+          /usr/libexec/PlistBuddy -c "Add :NSPhotoLibraryUsageDescription string 'Attach a photo of the property one-pager or flyer to a lead.'" ios/Runner/Info.plist
+
+      - name: Build unsigned iOS app
+        run: flutter build ios --release --no-codesign
+
+      - name: Package unsigned .ipa
+        run: |
+          mkdir -p Payload
+          cp -r build/ios/iphoneos/Runner.app Payload/
+          zip -r PropertyMate-unsigned.ipa Payload
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PropertyMate-unsigned-ipa
+          path: PropertyMate-unsigned.ipa
+          retention-days: 14
