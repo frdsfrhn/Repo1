@@ -2,6 +2,14 @@ name: iOS unsigned build (for local sideloading)
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - claude/flutter-firebase-mobile-app-h7fh9p
+    paths:
+      - .github/workflows/ios-adhoc-build.yml
+      - pubspec.yaml
+      - lib/**
+      - functions/**
 
 jobs:
   build:
