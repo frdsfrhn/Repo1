@@ -41,13 +41,27 @@ jobs:
           /usr/libexec/PlistBuddy -c "Add :NSMicrophoneUsageDescription string 'We need your microphone to record voice notes about your leads, which are transcribed into text.'" ios/Runner/Info.plist
           /usr/libexec/PlistBuddy -c "Add :NSPhotoLibraryUsageDescription string 'Attach a photo of the property one-pager or flyer to a lead.'" ios/Runner/Info.plist
 
-      - name: Build unsigned iOS app
-        run: flutter build ios --release --no-codesign
+      - name: Prepare Xcode project (Flutter config-only)
+        run: flutter build ios --release --no-codesign --config-only
+
+      - name: Archive with Xcode (codesigning forced off)
+        run: |
+          xcodebuild -workspace ios/Runner.xcworkspace \
+            -scheme Runner \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -archivePath build/ios/archive/Runner.xcarchive \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            DEVELOPMENT_TEAM="" \
+            archive
 
       - name: Package unsigned .ipa
         run: |
           mkdir -p Payload
-          cp -r build/ios/iphoneos/Runner.app Payload/
+          cp -r build/ios/archive/Runner.xcarchive/Products/Applications/Runner.app Payload/
           zip -r PropertyMate-unsigned.ipa Payload
 
       - uses: actions/upload-artifact@v4
