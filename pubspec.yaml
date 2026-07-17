@@ -25,7 +25,12 @@ dependencies:
   # record_linux/record_platform_interface combo that doesn't compile
   # (record_linux missing startStream/hasPermission overrides). 7.x publishes
   # its platform packages together so they stay in sync.
-  record: ^7.1.1
+  #
+  # Exact-pinned (no ^) to 7.1.1: later 7.x patches bump their own minimum
+  # Dart SDK past 3.6.0, which breaks resolution on any Flutter SDK stuck
+  # below that floor (e.g. Flutter 3.27 on a Mac too old for a newer Flutter
+  # release's own macOS requirement). Bump this deliberately, not implicitly.
+  record: 7.1.1
   permission_handler: ^11.3.1
   path_provider: ^2.1.4
 
