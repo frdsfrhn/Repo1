@@ -83,6 +83,24 @@ crash on iOS without it:
 <string>Attach a photo of the property one-pager or flyer to a lead.</string>
 ```
 
+**Phone auth URL scheme** — required for the phone-number sign-in screen;
+without it, Firebase Auth crashes the app immediately when you request an
+SMS code (it needs this to complete its reCAPTCHA verification redirect).
+Get `REVERSED_CLIENT_ID` from `ios/Runner/GoogleService-Info.plist` (it's
+already in there after `flutterfire configure`), then add to
+`ios/Runner/Info.plist`:
+```xml
+<key>CFBundleURLTypes</key>
+<array>
+  <dict>
+    <key>CFBundleURLSchemes</key>
+    <array>
+      <string>REPLACE_WITH_REVERSED_CLIENT_ID</string>
+    </array>
+  </dict>
+</array>
+```
+
 ## 7. Apple Developer account
 
 - A **free Apple ID** lets you build and run on your own physical iPhone
