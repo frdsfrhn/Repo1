@@ -87,8 +87,12 @@ crash on iOS without it:
 without it, Firebase Auth crashes the app immediately when you request an
 SMS code (it needs this to complete its reCAPTCHA verification redirect).
 This project doesn't use Google Sign-In, so `GoogleService-Info.plist` has
-no `REVERSED_CLIENT_ID` key — use the app's own bundle identifier as the
-URL scheme instead (this is what Firebase Auth falls back to). Add to
+no `REVERSED_CLIENT_ID` key. The fallback Firebase Auth actually looks for
+in that case is **not** the bundle ID — it's `app-` followed by
+`GOOGLE_APP_ID` (also in `GoogleService-Info.plist`) with every `:`
+replaced by `-`. E.g. `GOOGLE_APP_ID` of
+`1:783205454837:ios:ad5f7239d5f9a760e486bc` becomes the URL scheme
+`app-1-783205454837-ios-ad5f7239d5f9a760e486bc`. Add to
 `ios/Runner/Info.plist`:
 ```xml
 <key>CFBundleURLTypes</key>
@@ -96,7 +100,7 @@ URL scheme instead (this is what Firebase Auth falls back to). Add to
   <dict>
     <key>CFBundleURLSchemes</key>
     <array>
-      <string>com.frdsfrhn.propertyAgentApp</string>
+      <string>app-1-783205454837-ios-ad5f7239d5f9a760e486bc</string>
     </array>
   </dict>
 </array>
