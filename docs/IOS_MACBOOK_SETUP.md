@@ -86,8 +86,9 @@ crash on iOS without it:
 **Phone auth URL scheme** — required for the phone-number sign-in screen;
 without it, Firebase Auth crashes the app immediately when you request an
 SMS code (it needs this to complete its reCAPTCHA verification redirect).
-Get `REVERSED_CLIENT_ID` from `ios/Runner/GoogleService-Info.plist` (it's
-already in there after `flutterfire configure`), then add to
+This project doesn't use Google Sign-In, so `GoogleService-Info.plist` has
+no `REVERSED_CLIENT_ID` key — use the app's own bundle identifier as the
+URL scheme instead (this is what Firebase Auth falls back to). Add to
 `ios/Runner/Info.plist`:
 ```xml
 <key>CFBundleURLTypes</key>
@@ -95,11 +96,14 @@ already in there after `flutterfire configure`), then add to
   <dict>
     <key>CFBundleURLSchemes</key>
     <array>
-      <string>REPLACE_WITH_REVERSED_CLIENT_ID</string>
+      <string>com.frdsfrhn.propertyAgentApp</string>
     </array>
   </dict>
 </array>
 ```
+(If `GoogleService-Info.plist` *does* have a `REVERSED_CLIENT_ID` — e.g.
+if Google Sign-In gets added later — add a second `<dict>` entry in the
+array with that value too; harmless to have both.)
 
 ## 7. Apple Developer account
 

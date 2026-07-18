@@ -49,11 +49,18 @@ jobs:
 
       - name: Register URL scheme for Firebase phone auth
         run: |
-          REVERSED_CLIENT_ID=$(/usr/libexec/PlistBuddy -c "Print :REVERSED_CLIENT_ID" ios/Runner/GoogleService-Info.plist)
+          BUNDLE_ID="com.frdsfrhn.propertyAgentApp"
           /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes array" ios/Runner/Info.plist
           /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0 dict" ios/Runner/Info.plist
           /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes array" ios/Runner/Info.plist
-          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes:0 string $REVERSED_CLIENT_ID" ios/Runner/Info.plist
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes:0 string $BUNDLE_ID" ios/Runner/Info.plist
+
+          REVERSED_CLIENT_ID=$(/usr/libexec/PlistBuddy -c "Print :REVERSED_CLIENT_ID" ios/Runner/GoogleService-Info.plist 2>/dev/null || true)
+          if [ -n "$REVERSED_CLIENT_ID" ]; then
+            /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:1 dict" ios/Runner/Info.plist
+            /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:1:CFBundleURLSchemes array" ios/Runner/Info.plist
+            /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:1:CFBundleURLSchemes:0 string $REVERSED_CLIENT_ID" ios/Runner/Info.plist
+          fi
 
       - name: Prepare Xcode project (Flutter config-only)
         run: flutter build ios --release --no-codesign --config-only
