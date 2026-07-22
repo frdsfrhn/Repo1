@@ -112,7 +112,7 @@ async def job_status(job_id: str):
 
     job["status"] = status.get("status", job["status"])
     job["queue_position"] = status.get("queue_position")
-    job["logs"] = [entry.get("message", "") for entry in status.get("logs", []) if entry.get("message")]
+    job["logs"] = [entry.get("message", "") for entry in (status.get("logs") or []) if entry.get("message")]
 
     if job["status"] == "COMPLETED":
         try:
@@ -131,8 +131,8 @@ async def job_status(job_id: str):
 async def _persist_result(job: dict, result: dict) -> dict:
     params = job["params"]
     out_dir = config.get_output_dir()
-    images = result.get("images", [])
-    nsfw_flags = result.get("has_nsfw_concepts", [])
+    images = result.get("images") or []
+    nsfw_flags = result.get("has_nsfw_concepts") or []
     seed = result.get("seed", params.get("seed"))
 
     saved = []
