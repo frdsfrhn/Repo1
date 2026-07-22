@@ -1,21 +1,32 @@
 """FastAPI backend: a thin console in front of fal.ai's hosted Flux API."""
+import logging
 import mimetypes
 import uuid
 from pathlib import Path
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from . import config, storage
 from .fal_client import FalAPIError, build_payload, download_image, get_result, get_status, submit_job
 
+logger = logging.getLogger("flux_console")
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 FRONTEND_DIR = BASE_DIR / "frontend"
 
 app = FastAPI(title="Flux Generation Console")
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    # Last-resort safety net: an uncaught exception here would otherwise
+    # return a plain-text 500 that the frontend's res.json() can't parse.
+    logger.exception("Unhandled error on %s %s", request.method, request.url.path)
+    return JSONResponse(status_code=500, content={"detail": f"Server error: {exc}"})
 
 # In-memory job tracker. Jobs are transient by design — the durable record
 # of a generation is the gallery (SQLite + files on disk), not this dict.
@@ -110,6 +121,9 @@ async def job_status(job_id: str):
         except FalAPIError as e:
             job["status"] = "FAILED"
             job["error"] = e.detail
+        except Exception as e:
+            job["status"] = "FAILED"
+            job["error"] = f"Unexpected error while saving the result: {e}"
 
     return _job_response(job)
 
