@@ -19,18 +19,28 @@ public sealed class MainViewModel : ViewModelBase
         DatabaseBrowser = new DatabaseBrowserViewModel(databaseService, databaseRoot);
 
         Connection.GameMatched += (_, game) => Dashboard.LoadFromGame(game);
+
+        // Reattach on every connect attempt (ConnectionChanged) and on console changes — not on
+        // IsConnected's PropertyChanged alone, since reconnecting while already connected swaps
+        // Client to a new instance (disposing the old one) without IsConnected's value changing.
+        Connection.ConnectionChanged += (_, _) => ReattachClients();
         Connection.PropertyChanged += (_, e) =>
         {
-            if (e.PropertyName is nameof(ConnectionViewModel.IsConnected) or nameof(ConnectionViewModel.SelectedConsole))
+            if (e.PropertyName == nameof(ConnectionViewModel.SelectedConsole))
             {
-                RetroArchClient? client = Connection.IsConnected ? Connection.Client : null;
-                Dashboard.AttachClient(client, Connection.SelectedConsole);
-                LiveScan.AttachClient(client, Connection.SelectedConsole);
+                ReattachClients();
             }
         };
 
         // FR-2.5: an address found via live-scan gets tagged and shows up on the Dashboard immediately.
         LiveScan.ValueTagged += (_, trackedValue) => Dashboard.AddTrackedValue(trackedValue);
+    }
+
+    private void ReattachClients()
+    {
+        RetroArchClient? client = Connection.IsConnected ? Connection.Client : null;
+        Dashboard.AttachClient(client, Connection.SelectedConsole);
+        LiveScan.AttachClient(client, Connection.SelectedConsole);
     }
 
     public ConnectionViewModel Connection { get; }

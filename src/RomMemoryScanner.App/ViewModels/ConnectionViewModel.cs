@@ -34,6 +34,15 @@ public sealed class ConnectionViewModel : ViewModelBase
 
     public event EventHandler<Game?>? GameMatched;
 
+    /// <summary>
+    /// Fires after every connect attempt (success or failure) so subscribers can re-sync their
+    /// held <see cref="Client"/> reference. Deliberately not driven off <see cref="IsConnected"/>'s
+    /// PropertyChanged: that only fires when the boolean value changes, but <see cref="Client"/>
+    /// itself is replaced (old one disposed) on every call to Connect, including reconnects where
+    /// IsConnected stays true — relying on the boolean would leave subscribers holding a disposed client.
+    /// </summary>
+    public event EventHandler? ConnectionChanged;
+
     public RetroArchClient? Client { get; private set; }
 
     public string Host { get => _host; set => SetField(ref _host, value); }
@@ -104,6 +113,10 @@ public sealed class ConnectionViewModel : ViewModelBase
         {
             IsConnected = false;
             StatusMessage = $"Connection failed: {ex.Message}";
+        }
+        finally
+        {
+            ConnectionChanged?.Invoke(this, EventArgs.Empty);
         }
     }
 
