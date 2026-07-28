@@ -236,4 +236,43 @@ public class MemoryScannerTests
         Assert.Equal(wram.Length, scanner.CandidateCount);
         Assert.Equal(10, scanner.GetCandidates(limit: 10).Count);
     }
+
+    [Fact]
+    public async Task InitialScanUnknown_StartsWithEveryOffsetAsACandidate()
+    {
+        byte[] wram = NewSnesWram();
+        var reader = new FakeMemorySnapshotReader(wram);
+        var scanner = new MemoryScanner(reader, ConsoleType.Snes);
+
+        int count = await scanner.InitialScanUnknownAsync(DataType.U8, ByteOrder.LittleEndian);
+
+        Assert.Equal(wram.Length, count);
+        Assert.True(scanner.HasActiveScan);
+    }
+
+    [Fact]
+    public async Task InitialScanUnknown_ThenChanged_FindsAnItemSlotStyleAddress_WithNoKnownValue()
+    {
+        // Simulates finding an item slot: no visible number to type in, just "swap the item and
+        // tell me what changed" (the Cheat Engine-style "unknown initial value" search).
+        byte[] wram = NewSnesWram();
+        wram[0x2EB] = 0x05; // "item slot" holding item id 5 (Herb), unknown to the scanner
+
+        var reader = new FakeMemorySnapshotReader(wram);
+        var scanner = new MemoryScanner(reader, ConsoleType.Snes);
+        int initialCount = await scanner.InitialScanUnknownAsync(DataType.U8, ByteOrder.LittleEndian);
+        Assert.Equal(wram.Length, initialCount); // nothing filtered out yet
+
+        // Player swaps the item in that slot for a Mithril Sword (id 0x14); nothing else changes.
+        var afterSwap = (byte[])wram.Clone();
+        afterSwap[0x2EB] = 0x14;
+        reader.CurrentSnapshot = afterSwap;
+
+        int narrowed = await scanner.NextScanAsync(ScanComparison.Changed);
+
+        Assert.Equal(1, narrowed);
+        ScanCandidate candidate = Assert.Single(scanner.GetCandidates());
+        Assert.Equal(ConsoleAddressSpace.Snes.WramBase + 0x2EB, candidate.ConsoleAddress);
+        Assert.Equal(0x14u, candidate.Value);
+    }
 }

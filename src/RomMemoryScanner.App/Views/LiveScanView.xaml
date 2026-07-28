@@ -9,7 +9,7 @@
     <DockPanel Margin="16">
         <TextBlock DockPanel.Dock="Top" Text="Live value scan" FontWeight="Bold" FontSize="16" Margin="0,0,0,8" />
         <TextBlock DockPanel.Dock="Top" TextWrapping="Wrap" Foreground="Gray" Margin="0,0,0,12"
-                   Text="Don't know an address yet? Tell the app a value you can see on screen (e.g. your HP), scan, then tell it how the value changed after taking damage or healing. Repeat until one address is left, then tag it." />
+                   Text="Don't know an address yet? Tell the app a value you can see on screen (e.g. your HP), scan, then tell it how the value changed after taking damage or healing. Repeat until one address is left, then tag it. For things with no visible number (item IDs, flags), use 'Unknown value' below instead: snapshot everything, change it in-game, then narrow by what changed." />
 
         <TextBlock DockPanel.Dock="Bottom" Text="{Binding StatusMessage}" Foreground="Gray" Margin="0,8,0,0" TextWrapping="Wrap" />
 
@@ -38,6 +38,12 @@
                 <TextBox Grid.Column="1" Text="{Binding KnownValueText, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding HasActiveScan, Converter={StaticResource InverseBooleanConverter}}" />
                 <Button Grid.Column="2" Content="Start scan" Command="{Binding StartScanCommand}" Margin="8,0,0,0" Padding="16,4" />
             </Grid>
+
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                <TextBlock Text="No visible number (item IDs, flags)?" VerticalAlignment="Center" Margin="0,0,8,0" />
+                <Button Content="Start unknown-value scan" Command="{Binding StartUnknownScanCommand}" Padding="16,4"
+                        IsEnabled="{Binding HasActiveScan, Converter={StaticResource InverseBooleanConverter}}" />
+            </StackPanel>
 
             <Grid Margin="0,0,0,8" Visibility="{Binding HasActiveScan, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <Grid.ColumnDefinitions>

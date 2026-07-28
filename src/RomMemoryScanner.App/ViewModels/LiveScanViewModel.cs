@@ -36,6 +36,7 @@ public sealed class LiveScanViewModel : ViewModelBase
     public LiveScanViewModel()
     {
         StartScanCommand = new AsyncRelayCommand(StartScanAsync, () => _client is not null && !string.IsNullOrWhiteSpace(KnownValueText));
+        StartUnknownScanCommand = new AsyncRelayCommand(StartUnknownScanAsync, () => _client is not null);
         NextScanCommand = new AsyncRelayCommand(NextScanAsync, () => HasActiveScan);
         ResetCommand = new RelayCommand(_ => Reset(), _ => HasActiveScan);
         TagSelectedCommand = new RelayCommand(_ => TagSelected(), _ => SelectedCandidate is not null && !string.IsNullOrWhiteSpace(TagLabel));
@@ -73,6 +74,7 @@ public sealed class LiveScanViewModel : ViewModelBase
     public ObservableCollection<ScanCandidate> Candidates { get; } = new();
 
     public AsyncRelayCommand StartScanCommand { get; }
+    public AsyncRelayCommand StartUnknownScanCommand { get; }
     public AsyncRelayCommand NextScanCommand { get; }
     public RelayCommand ResetCommand { get; }
     public RelayCommand TagSelectedCommand { get; }
@@ -108,6 +110,33 @@ public sealed class LiveScanViewModel : ViewModelBase
             int count = await _scanner.InitialScanAsync(rawValue, DataType, ByteOrder).ConfigureAwait(true);
             RefreshCandidates();
             StatusMessage = $"Initial scan found {count} candidate(s).";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Scan failed: {ex.Message}";
+        }
+    }
+
+    /// <summary>
+    /// "Unknown initial value" scan (FR-2.4 variant): for things with no readable number on
+    /// screen — item IDs, flags — snapshots everything instead of filtering by a known value.
+    /// Change the thing in-game, then use Next scan with "Changed" to start narrowing.
+    /// </summary>
+    private async Task StartUnknownScanAsync()
+    {
+        if (_client is null)
+        {
+            return;
+        }
+
+        try
+        {
+            _scanner = new MemoryScanner(new RetroArchSnapshotReader(_client, _console), _console);
+            StatusMessage = "Scanning...";
+            int count = await _scanner.InitialScanUnknownAsync(DataType, ByteOrder).ConfigureAwait(true);
+            RefreshCandidates();
+            Comparison = ScanComparison.Changed;
+            StatusMessage = $"Snapshotted {count} offset(s). Change the item/value in-game, then Next scan with \"Changed.\"";
         }
         catch (Exception ex)
         {

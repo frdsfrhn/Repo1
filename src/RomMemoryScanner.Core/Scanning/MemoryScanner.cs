@@ -59,6 +59,32 @@ public sealed class MemoryScanner
         return candidates.Count;
     }
 
+    /// <summary>
+    /// "Unknown initial value" scan: for values with nothing readable on screen to type in (item
+    /// IDs, flags, anything shown as an icon/name rather than a number), skips the value filter
+    /// entirely and snapshots every offset as a candidate. Follow with <see cref="NextScanAsync"/>
+    /// using <see cref="ScanComparison.Changed"/> after changing the thing in-game (e.g. swapping
+    /// an item) to start narrowing — this is the Cheat-Engine-style "unknown initial value" search.
+    /// </summary>
+    public async Task<int> InitialScanUnknownAsync(DataType dataType, ByteOrder byteOrder, CancellationToken cancellationToken = default)
+    {
+        _dataType = dataType;
+        _byteOrder = byteOrder;
+
+        byte[] snapshot = await _reader.ReadSnapshotAsync(cancellationToken).ConfigureAwait(false);
+        int byteWidth = dataType.ByteWidth();
+
+        var candidates = new List<uint>(Math.Max(0, snapshot.Length - byteWidth + 1));
+        for (int offset = 0; offset + byteWidth <= snapshot.Length; offset++)
+        {
+            candidates.Add((uint)offset);
+        }
+
+        _previousSnapshot = snapshot;
+        _candidateOffsets = candidates;
+        return candidates.Count;
+    }
+
     /// <summary>FR-2.4 next scan: narrows the current candidates by how their value changed since the last pass.</summary>
     public async Task<int> NextScanAsync(ScanComparison comparison, uint? exactRawValue = null, CancellationToken cancellationToken = default)
     {
