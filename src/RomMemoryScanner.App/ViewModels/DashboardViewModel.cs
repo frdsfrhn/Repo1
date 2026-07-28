@@ -50,9 +50,26 @@ public sealed class DashboardViewModel : ViewModelBase
             }
         };
         AddManualCommand = new RelayCommand(_ => AddManual(), _ => !string.IsNullOrWhiteSpace(ManualLabel) && !string.IsNullOrWhiteSpace(ManualAddressHex));
+        RemoveSelectedCommand = new RelayCommand(_ => RemoveSelected(), _ => SelectedRow is not null);
     }
 
     public ObservableCollection<TrackedValueRowViewModel> Rows { get; }
+
+    private TrackedValueRowViewModel? _selectedRow;
+    public TrackedValueRowViewModel? SelectedRow { get => _selectedRow; set => SetField(ref _selectedRow, value); }
+
+    public RelayCommand RemoveSelectedCommand { get; }
+
+    private void RemoveSelected()
+    {
+        if (SelectedRow is null)
+        {
+            return;
+        }
+
+        Rows.Remove(SelectedRow);
+        SelectedRow = null;
+    }
 
     /// <summary>NFR-2: any live memory read/write action is logged, visible to the user as an audit trail.</summary>
     public ObservableCollection<string> AuditLog { get; }

@@ -39,7 +39,10 @@
             </StackPanel>
         </Expander>
 
-        <DataGrid ItemsSource="{Binding Rows}" AutoGenerateColumns="False" CanUserAddRows="False"
+        <Button DockPanel.Dock="Top" Content="Remove selected" Command="{Binding RemoveSelectedCommand}"
+                HorizontalAlignment="Left" Padding="12,4" Margin="0,0,0,8" />
+
+        <DataGrid ItemsSource="{Binding Rows}" SelectedItem="{Binding SelectedRow}" AutoGenerateColumns="False" CanUserAddRows="False"
                   IsReadOnly="False" GridLinesVisibility="Horizontal">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Label" Binding="{Binding Label}" IsReadOnly="True" Width="180" />
