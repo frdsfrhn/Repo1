@@ -12,6 +12,33 @@
             <ListBox ItemsSource="{Binding AuditLog}" Height="140" FontFamily="Consolas" FontSize="11" />
         </Expander>
 
+        <Expander DockPanel.Dock="Top" Header="Add an address manually (already know it? skip Live Scan)" Margin="0,0,0,8" IsExpanded="False">
+            <StackPanel Margin="8">
+                <Grid Margin="0,0,0,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="150" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="110" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="110" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="110" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="Label:" VerticalAlignment="Center" Margin="0,0,4,0" />
+                    <TextBox Grid.Column="1" Text="{Binding ManualLabel, UpdateSourceTrigger=PropertyChanged}" />
+                    <TextBlock Grid.Column="2" Text="Address (hex):" VerticalAlignment="Center" Margin="12,0,4,0" />
+                    <TextBox Grid.Column="3" Text="{Binding ManualAddressHex, UpdateSourceTrigger=PropertyChanged}" FontFamily="Consolas" />
+                    <TextBlock Grid.Column="4" Text="Type:" VerticalAlignment="Center" Margin="12,0,4,0" />
+                    <ComboBox Grid.Column="5" ItemsSource="{Binding AvailableDataTypes}" SelectedItem="{Binding ManualDataType}" />
+                    <TextBlock Grid.Column="6" Text="Byte order:" VerticalAlignment="Center" Margin="12,0,4,0" />
+                    <ComboBox Grid.Column="7" ItemsSource="{Binding AvailableByteOrders}" SelectedItem="{Binding ManualByteOrder}" />
+                </Grid>
+                <Button Content="Add" Command="{Binding AddManualCommand}" HorizontalAlignment="Left" Padding="16,4" Margin="0,0,0,4" />
+                <TextBlock Text="{Binding ManualEntryError}" Foreground="Red" TextWrapping="Wrap" />
+            </StackPanel>
+        </Expander>
+
         <DataGrid ItemsSource="{Binding Rows}" AutoGenerateColumns="False" CanUserAddRows="False"
                   IsReadOnly="False" GridLinesVisibility="Horizontal">
             <DataGrid.Columns>

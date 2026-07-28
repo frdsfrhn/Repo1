@@ -21,12 +21,19 @@ public sealed class DashboardViewModel : ViewModelBase
     private ConsoleType _console;
     private string? _gameTitle;
 
+    private string _manualLabel = "";
+    private string _manualAddressHex = "";
+    private DataType _manualDataType = DataType.U8;
+    private ByteOrder _manualByteOrder = ByteOrder.LittleEndian;
+    private string? _manualEntryError;
+
     public DashboardViewModel()
     {
         Rows = new ObservableCollection<TrackedValueRowViewModel>();
         AuditLog = new ObservableCollection<string>();
         _pollTimer = new DispatcherTimer { Interval = PollInterval };
         _pollTimer.Tick += async (_, _) => await PollAsync().ConfigureAwait(true);
+        AddManualCommand = new RelayCommand(_ => AddManual(), _ => !string.IsNullOrWhiteSpace(ManualLabel) && !string.IsNullOrWhiteSpace(ManualAddressHex));
     }
 
     public ObservableCollection<TrackedValueRowViewModel> Rows { get; }
@@ -39,6 +46,19 @@ public sealed class DashboardViewModel : ViewModelBase
         get => _gameTitle;
         private set => SetField(ref _gameTitle, value);
     }
+
+    /// <summary>Manual entry: know an address already (e.g. from a community source or prior session)? Add it directly, no scan needed.</summary>
+    public IEnumerable<DataType> AvailableDataTypes => Enum.GetValues<DataType>();
+
+    public IEnumerable<ByteOrder> AvailableByteOrders => new[] { ByteOrder.LittleEndian, ByteOrder.BigEndian };
+
+    public string ManualLabel { get => _manualLabel; set => SetField(ref _manualLabel, value); }
+    public string ManualAddressHex { get => _manualAddressHex; set => SetField(ref _manualAddressHex, value); }
+    public DataType ManualDataType { get => _manualDataType; set => SetField(ref _manualDataType, value); }
+    public ByteOrder ManualByteOrder { get => _manualByteOrder; set => SetField(ref _manualByteOrder, value); }
+    public string? ManualEntryError { get => _manualEntryError; private set => SetField(ref _manualEntryError, value); }
+
+    public RelayCommand AddManualCommand { get; }
 
     public void AttachClient(RetroArchClient? client, ConsoleType console)
     {
@@ -70,10 +90,54 @@ public sealed class DashboardViewModel : ViewModelBase
         }
     }
 
-    /// <summary>FR-2.5: lets a value found via live-scan (Phase 2) be tagged and added here; also usable for manual tagging today.</summary>
+    /// <summary>FR-2.5: lets a value found via live-scan be tagged and added here; also usable for manual tagging today.</summary>
     public void AddTrackedValue(TrackedValue trackedValue)
     {
         Rows.Add(new TrackedValueRowViewModel(trackedValue, WriteRowAsync));
+    }
+
+    /// <summary>Adds a tracked value from a manually-entered address — no scan needed, for addresses already known from another source.</summary>
+    private void AddManual()
+    {
+        ManualEntryError = null;
+
+        string cleaned = ManualAddressHex.Trim().TrimStart('0', 'x', 'X');
+        if (cleaned.Length == 0)
+        {
+            cleaned = "0";
+        }
+
+        if (!uint.TryParse(cleaned, System.Globalization.NumberStyles.HexNumber, System.Globalization.CultureInfo.InvariantCulture, out uint address))
+        {
+            ManualEntryError = $"'{ManualAddressHex}' is not a valid hex address.";
+            return;
+        }
+
+        try
+        {
+            // Fail fast with a clear message rather than letting the first poll tick surface an
+            // AddressOutOfRangeException — Dashboard reads/writes only ever go through this
+            // console's WRAM window (see AddressTranslator), so anything outside it can never work.
+            AddressTranslator.ToCoreOffset(_console, address);
+        }
+        catch (AddressOutOfRangeException ex)
+        {
+            ManualEntryError = ex.Message;
+            return;
+        }
+
+        var trackedValue = new TrackedValue
+        {
+            Label = ManualLabel,
+            ConsoleAddress = address,
+            DataType = ManualDataType,
+            ByteOrder = ManualByteOrder,
+            Notes = "Added manually.",
+        };
+
+        AddTrackedValue(trackedValue);
+        ManualLabel = "";
+        ManualAddressHex = "";
     }
 
     private async Task PollAsync()
