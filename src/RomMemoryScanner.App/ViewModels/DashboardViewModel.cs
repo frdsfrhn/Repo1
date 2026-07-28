@@ -222,6 +222,7 @@ public sealed class DashboardViewModel : ViewModelBase
         byte[] bytes = RawValueCodec.ToBytes(newRawValue, row.DataType.ByteWidth(), row.TrackedValue.ByteOrder);
         await _client.WriteCoreRamAsync(offset, bytes).ConfigureAwait(true);
         row.IsLive = true;
+        row.LastError = null;
 
         AuditLog.Insert(0, $"[{DateTime.Now:HH:mm:ss}] Wrote 0x{newRawValue:X} to '{row.Label}' ({row.AddressHex})");
         TrimAuditLog();

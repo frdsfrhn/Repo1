@@ -92,7 +92,22 @@ public sealed class ConnectionViewModel : ViewModelBase
     private async Task ConnectAsync()
     {
         StatusMessage = $"Connecting to RetroArch at {Host}:{Port}...";
-        Client?.Dispose();
+
+        // Don't dispose the old client synchronously here: the Dashboard's poll timer or a Live
+        // Scan may have a request already in flight against it (e.g. a frozen row's re-write),
+        // and disposing out from under that in-flight call throws ObjectDisposedException there.
+        // ConnectionChanged (below) already tells subscribers to stop using the old client for any
+        // *new* work; giving in-flight work a moment to finish or time out on its own (its longest
+        // possible span is 3 retries * 750ms, per RetroArchClient.ReadCoreRamAsync) avoids that
+        // race instead of just tolerating it.
+        RetroArchClient? previousClient = Client;
+        if (previousClient is not null)
+        {
+            _ = Task.Delay(TimeSpan.FromSeconds(3)).ContinueWith(
+                _ => previousClient.Dispose(),
+                TaskScheduler.Default);
+        }
+
         Client = new RetroArchClient(Host, Port);
 
         try

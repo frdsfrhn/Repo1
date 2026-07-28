@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Windows.Input;
 using RomMemoryScanner.Core.Models;
 using RomMemoryScanner.Core.Numeric;
 using RomMemoryScanner.Core.RetroArch;
@@ -175,6 +176,7 @@ public sealed class LiveScanViewModel : ViewModelBase
         CandidateCount = 0;
         Candidates.Clear();
         SelectedCandidate = null;
+        CommandManager.InvalidateRequerySuggested();
     }
 
     private void RefreshCandidates()
@@ -183,15 +185,19 @@ public sealed class LiveScanViewModel : ViewModelBase
         CandidateCount = _scanner?.CandidateCount ?? 0;
 
         Candidates.Clear();
-        if (_scanner is null)
+        if (_scanner is not null)
         {
-            return;
+            foreach (ScanCandidate candidate in _scanner.GetCandidates())
+            {
+                Candidates.Add(candidate);
+            }
         }
 
-        foreach (ScanCandidate candidate in _scanner.GetCandidates())
-        {
-            Candidates.Add(candidate);
-        }
+        // Reset/NextScan's enabled state depends on HasActiveScan, which just changed as a side
+        // effect of an async scan completing rather than direct user input — WPF's automatic
+        // command requery doesn't reliably catch that pattern, so it's forced explicitly here
+        // rather than leaving Reset stuck looking disabled after a scan finishes.
+        CommandManager.InvalidateRequerySuggested();
     }
 
     private bool TryConvertToRaw(string text, out uint rawValue, out string? error)
