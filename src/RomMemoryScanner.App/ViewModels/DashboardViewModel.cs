@@ -33,7 +33,22 @@ public sealed class DashboardViewModel : ViewModelBase
         Rows = new ObservableCollection<TrackedValueRowViewModel>();
         AuditLog = new ObservableCollection<string>();
         _pollTimer = new DispatcherTimer { Interval = PollInterval };
-        _pollTimer.Tick += async (_, _) => await PollAsync().ConfigureAwait(true);
+        _pollTimer.Tick += async (_, _) =>
+        {
+            // This fires on the UI thread via an async-void-shaped event handler: any exception
+            // that escapes it is unhandled and crashes the whole app (WPF has no way to catch it
+            // from outside). A background poll loop running forever must never be able to do that,
+            // regardless of what bug might someday cause it to throw.
+            try
+            {
+                await PollAsync().ConfigureAwait(true);
+            }
+            catch (Exception ex)
+            {
+                AuditLog.Insert(0, $"[{DateTime.Now:HH:mm:ss}] Poll error (recovered): {ex.Message}");
+                TrimAuditLog();
+            }
+        };
         AddManualCommand = new RelayCommand(_ => AddManual(), _ => !string.IsNullOrWhiteSpace(ManualLabel) && !string.IsNullOrWhiteSpace(ManualAddressHex));
     }
 
@@ -161,7 +176,13 @@ public sealed class DashboardViewModel : ViewModelBase
         _isPolling = true;
         try
         {
-            foreach (TrackedValueRowViewModel row in Rows)
+            // Snapshot before iterating: this loop awaits network calls per row, yielding control
+            // back to the UI thread on every await — if the user adds a row (or anything else
+            // mutates Rows) while paused mid-loop, enumerating the live ObservableCollection
+            // directly would throw "Collection was modified" and (per the Tick handler above)
+            // that used to crash the app outright.
+            TrackedValueRowViewModel[] rowsSnapshot = Rows.ToArray();
+            foreach (TrackedValueRowViewModel row in rowsSnapshot)
             {
                 try
                 {
