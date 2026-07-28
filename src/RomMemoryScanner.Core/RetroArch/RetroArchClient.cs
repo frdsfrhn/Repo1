@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -44,14 +45,40 @@ public sealed class RetroArchClient : IDisposable
     /// <summary>
     /// Reads <paramref name="length"/> bytes starting at the given core-relative RAM offset
     /// (see <see cref="Addressing.AddressTranslator"/> — this is NOT a console-space address).
+    ///
+    /// A value-scan pass fires many rapid, back-to-back reads (chunked across the whole WRAM
+    /// window), so it's routine over UDP to occasionally receive a stale or out-of-order reply
+    /// that doesn't belong to the request that was just sent. Rather than trust whatever datagram
+    /// arrives next, this validates the reply's echoed offset and retries a bounded number of
+    /// times on a mismatch or malformed reply instead of surfacing a raw parse exception.
     /// </summary>
     public async Task<byte[]> ReadCoreRamAsync(uint coreOffset, int length, CancellationToken cancellationToken = default)
     {
-        string command = $"READ_CORE_RAM {coreOffset:x} {length}";
-        string? reply = await SendCommandAsync(command, cancellationToken).ConfigureAwait(false)
-            ?? throw new RetroArchCommunicationException("No response from RetroArch to READ_CORE_RAM (is it running with network commands enabled?).");
+        const int maxAttempts = 3;
+        RetroArchCommunicationException? lastError = null;
 
-        return ParseReadCoreRamReply(reply, coreOffset, length);
+        for (int attempt = 1; attempt <= maxAttempts; attempt++)
+        {
+            string command = $"READ_CORE_RAM {coreOffset:x} {length}";
+            string? reply = await SendCommandAsync(command, cancellationToken).ConfigureAwait(false);
+            if (reply is null)
+            {
+                lastError = new RetroArchCommunicationException(
+                    "No response from RetroArch to READ_CORE_RAM (is it running with network commands enabled?).");
+                continue;
+            }
+
+            try
+            {
+                return ParseReadCoreRamReply(reply, coreOffset, length);
+            }
+            catch (RetroArchCommunicationException ex)
+            {
+                lastError = ex;
+            }
+        }
+
+        throw lastError ?? new RetroArchCommunicationException($"READ_CORE_RAM at offset 0x{coreOffset:x} failed after {maxAttempts} attempts.");
     }
 
     /// <summary>Writes <paramref name="data"/> starting at the given core-relative RAM offset.</summary>
@@ -75,13 +102,31 @@ public sealed class RetroArchClient : IDisposable
             throw new RetroArchCommunicationException($"Unexpected reply to READ_CORE_RAM: '{reply}'.");
         }
 
+        // Guards against a stale/out-of-order UDP reply (from an earlier chunk in the same scan
+        // pass) being mistaken for the one just requested.
+        if (!uint.TryParse(parts[1], NumberStyles.HexNumber, CultureInfo.InvariantCulture, out uint repliedOffset)
+            || repliedOffset != expectedOffset)
+        {
+            throw new RetroArchCommunicationException(
+                $"READ_CORE_RAM reply offset mismatch (requested 0x{expectedOffset:x}, reply said '{parts[1]}') — likely a stale UDP reply.");
+        }
+
         if (parts.Length == 3 && parts[2] == "-1")
         {
             throw new RetroArchCommunicationException(
                 $"RetroArch rejected READ_CORE_RAM at offset 0x{expectedOffset:x} — no core loaded, or offset outside the core's RAM.");
         }
 
-        byte[] bytes = parts.Skip(2).Select(hex => Convert.ToByte(hex, 16)).ToArray();
+        var bytes = new byte[parts.Length - 2];
+        for (int i = 0; i < bytes.Length; i++)
+        {
+            string hex = parts[i + 2];
+            if (hex.Length != 2 || !byte.TryParse(hex, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out bytes[i]))
+            {
+                throw new RetroArchCommunicationException($"READ_CORE_RAM reply contained a malformed byte token '{hex}'.");
+            }
+        }
+
         if (bytes.Length != expectedLength)
         {
             throw new RetroArchCommunicationException(
