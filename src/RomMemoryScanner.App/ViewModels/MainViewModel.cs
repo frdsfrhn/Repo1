@@ -1,3 +1,4 @@
+using System.IO;
 using RomMemoryScanner.Core.Database;
 
 namespace RomMemoryScanner.App.ViewModels;

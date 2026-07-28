@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.IO;
 using RomMemoryScanner.Core.Database;
 using RomMemoryScanner.Core.Models;
 
