@@ -21,6 +21,7 @@ public sealed class RetroArchClient : IDisposable
 
     private readonly UdpClient _udpClient;
     private readonly IPEndPoint _endpoint;
+    private readonly TimeSpan _timeout;
 
     /// <summary>
     /// Serializes every send+receive round-trip through the shared socket. Without this, two
@@ -29,29 +30,36 @@ public sealed class RetroArchClient : IDisposable
     /// can each have a request in flight simultaneously — UDP has no way to correlate a reply to
     /// "the request I just sent" beyond what's in the payload, so replies can get picked up by
     /// whichever concurrent receive happens to unblock first, misattributing one row's value to
-    /// another's address. This turns "N requests in flight" into "1 request in flight," which
-    /// plus the offset validation in <see cref="ParseReadCoreRamReply"/> is what actually
-    /// guarantees a reply belongs to the request that preceded it.
+    /// another's address. This turns "N requests in flight" into "1 request in flight" — necessary
+    /// but not sufficient on its own; see <see cref="SendCommandAsync"/> for the other half (a
+    /// late reply to a request that already timed out doesn't disappear just because sends are
+    /// serialized).
     /// </summary>
     private readonly SemaphoreSlim _requestLock = new(1, 1);
 
-    public RetroArchClient(string host = "127.0.0.1", int port = DefaultPort)
+    /// <param name="timeout">
+    /// Per-request receive timeout. Defaults to 750ms; exposed mainly so tests can use a short
+    /// timeout to exercise timeout/late-reply behavior quickly rather than waiting on production
+    /// timing.
+    /// </param>
+    public RetroArchClient(string host = "127.0.0.1", int port = DefaultPort, TimeSpan? timeout = null)
     {
         _endpoint = new IPEndPoint(IPAddress.Parse(host), port);
+        _timeout = timeout ?? DefaultTimeout;
         _udpClient = new UdpClient();
-        _udpClient.Client.ReceiveTimeout = (int)DefaultTimeout.TotalMilliseconds;
+        _udpClient.Client.ReceiveTimeout = (int)_timeout.TotalMilliseconds;
     }
 
     /// <summary>Sends VERSION and waits for a reply, to confirm RetroArch is running and reachable.</summary>
     public async Task<string?> GetVersionAsync(CancellationToken cancellationToken = default)
     {
-        string? reply = await SendCommandAsync("VERSION", cancellationToken).ConfigureAwait(false);
+        string? reply = await SendCommandAsync("VERSION", isExpectedReply: null, cancellationToken).ConfigureAwait(false);
         return reply?.Trim();
     }
 
     public async Task<string?> GetStatusAsync(CancellationToken cancellationToken = default)
     {
-        string? reply = await SendCommandAsync("GET_STATUS", cancellationToken).ConfigureAwait(false);
+        string? reply = await SendCommandAsync("GET_STATUS", isExpectedReply: null, cancellationToken).ConfigureAwait(false);
         return reply?.Trim();
     }
 
@@ -73,7 +81,7 @@ public sealed class RetroArchClient : IDisposable
         for (int attempt = 1; attempt <= maxAttempts; attempt++)
         {
             string command = $"READ_CORE_RAM {coreOffset:x} {length}";
-            string? reply = await SendCommandAsync(command, cancellationToken).ConfigureAwait(false);
+            string? reply = await SendCommandAsync(command, reply => IsReadCoreRamReplyFor(reply, coreOffset), cancellationToken).ConfigureAwait(false);
             if (reply is null)
             {
                 lastError = new RetroArchCommunicationException(
@@ -99,10 +107,20 @@ public sealed class RetroArchClient : IDisposable
     {
         string hexBytes = string.Join(' ', data.Select(b => b.ToString("x2")));
         string command = $"WRITE_CORE_RAM {coreOffset:x} {hexBytes}";
-        await SendCommandAsync(command, cancellationToken).ConfigureAwait(false);
+        await SendCommandAsync(command, isExpectedReply: null, cancellationToken).ConfigureAwait(false);
         // RetroArch does not reliably reply to WRITE_CORE_RAM with a parseable success payload
         // across versions, so absence of a reply is not treated as failure here; callers that
         // need write confirmation should follow up with a read (as the dashboard does).
+    }
+
+    /// <summary>Lightweight pre-check used to discard stale replies without fully parsing them — see <see cref="SendCommandAsync"/>.</summary>
+    internal static bool IsReadCoreRamReplyFor(string reply, uint expectedOffset)
+    {
+        string[] parts = reply.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return parts.Length >= 2
+            && string.Equals(parts[0], "READ_CORE_RAM", StringComparison.OrdinalIgnoreCase)
+            && uint.TryParse(parts[1], NumberStyles.HexNumber, CultureInfo.InvariantCulture, out uint repliedOffset)
+            && repliedOffset == expectedOffset;
     }
 
     internal static byte[] ParseReadCoreRamReply(string reply, uint expectedOffset, int expectedLength)
@@ -149,7 +167,18 @@ public sealed class RetroArchClient : IDisposable
         return bytes;
     }
 
-    private async Task<string?> SendCommandAsync(string command, CancellationToken cancellationToken)
+    /// <summary>
+    /// Sends <paramref name="command"/> and waits for a reply. If RetroArch is slow enough that a
+    /// *previous* request's reply arrives after that request already gave up and moved on, that
+    /// stray reply doesn't vanish — it sits in the socket's receive buffer until some later
+    /// receive picks it up. Serializing sends (<see cref="_requestLock"/>) alone doesn't prevent
+    /// that: it only stops two sends from overlapping, not an old reply from outliving the request
+    /// that (locally) timed out on it. So when <paramref name="isExpectedReply"/> is given, this
+    /// keeps receiving and discarding anything that doesn't match within the *same* timeout
+    /// window, instead of the mismatch being handed to whichever later, unrelated request happens
+    /// to call receive next.
+    /// </summary>
+    private async Task<string?> SendCommandAsync(string command, Func<string, bool>? isExpectedReply, CancellationToken cancellationToken)
     {
         await _requestLock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
@@ -157,16 +186,30 @@ public sealed class RetroArchClient : IDisposable
             byte[] payload = Encoding.ASCII.GetBytes(command);
             await _udpClient.SendAsync(payload, payload.Length, _endpoint).ConfigureAwait(false);
 
-            using var timeoutCts = new CancellationTokenSource(DefaultTimeout);
+            using var timeoutCts = new CancellationTokenSource(_timeout);
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
-            try
+
+            while (true)
             {
-                UdpReceiveResult result = await _udpClient.ReceiveAsync(linkedCts.Token).ConfigureAwait(false);
-                return Encoding.ASCII.GetString(result.Buffer);
-            }
-            catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
-            {
-                return null;
+                string reply;
+                try
+                {
+                    UdpReceiveResult result = await _udpClient.ReceiveAsync(linkedCts.Token).ConfigureAwait(false);
+                    reply = Encoding.ASCII.GetString(result.Buffer);
+                }
+                catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
+                {
+                    return null;
+                }
+
+                if (isExpectedReply is null || isExpectedReply(reply))
+                {
+                    return reply;
+                }
+
+                // Stale reply to an earlier, already-abandoned request — discard and keep waiting
+                // within this same request's timeout budget rather than returning it as if it
+                // were the answer to what was just sent.
             }
         }
         finally

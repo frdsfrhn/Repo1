@@ -19,9 +19,18 @@ public sealed class FakeRetroArchServer : IDisposable
     private readonly UdpClient _server;
     private readonly CancellationTokenSource _cts = new();
     private readonly Task _loop;
+    private readonly TimeSpan? _delayFirstReplyBy;
+    private int _requestCount;
 
-    public FakeRetroArchServer()
+    /// <param name="delayFirstReplyBy">
+    /// If set, the reply to the very first request received is delayed by this much (all others
+    /// reply near-instantly) — simulates RetroArch being briefly slow enough that a caller's own
+    /// timeout fires before the real reply arrives, so the reply becomes "stale" by the time it's
+    /// actually sent.
+    /// </param>
+    public FakeRetroArchServer(TimeSpan? delayFirstReplyBy = null)
     {
+        _delayFirstReplyBy = delayFirstReplyBy;
         _server = new UdpClient(new IPEndPoint(IPAddress.Loopback, 0));
         Port = ((IPEndPoint)_server.Client.LocalEndPoint!).Port;
         _loop = Task.Run(() => RunAsync(_cts.Token));
@@ -58,9 +67,17 @@ public sealed class FakeRetroArchServer : IDisposable
         string command = Encoding.ASCII.GetString(result.Buffer);
         string[] parts = command.Split(' ');
 
-        // Randomized delay to encourage requests overlapping in flight, which is exactly the
-        // condition that exposed the cross-talk bug against a real RetroArch instance.
-        await Task.Delay(Random.Shared.Next(1, 15), cancellationToken).ConfigureAwait(false);
+        bool isFirstRequest = Interlocked.Increment(ref _requestCount) == 1;
+        if (isFirstRequest && _delayFirstReplyBy is { } delay)
+        {
+            await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
+        }
+        else
+        {
+            // Randomized delay to encourage requests overlapping in flight, which is exactly the
+            // condition that exposed the cross-talk bug against a real RetroArch instance.
+            await Task.Delay(Random.Shared.Next(1, 15), cancellationToken).ConfigureAwait(false);
+        }
 
         if (parts.Length >= 2 && parts[0] == "WRITE_CORE_RAM")
         {
