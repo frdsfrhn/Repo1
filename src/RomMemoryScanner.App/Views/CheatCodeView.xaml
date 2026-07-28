@@ -1,0 +1,56 @@
+<UserControl x:Class="RomMemoryScanner.App.Views.CheatCodeView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:RomMemoryScanner.App.Views">
+    <UserControl.Resources>
+        <local:ConsoleToPs1VisibilityConverter x:Key="Ps1OnlyVisibilityConverter" />
+    </UserControl.Resources>
+    <StackPanel Margin="16">
+
+        <TextBlock Text="Console" FontWeight="Bold" Margin="0,0,0,4" />
+        <ComboBox ItemsSource="{Binding AvailableConsoles}" SelectedItem="{Binding Console}" Width="160" HorizontalAlignment="Left" Margin="0,0,0,16" />
+
+        <TextBlock Text="Generate a code" FontWeight="Bold" FontSize="16" Margin="0,0,0,8" />
+        <Grid Margin="0,0,0,8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="140" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="140" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Text="Address (hex):" VerticalAlignment="Center" Margin="0,0,4,0" />
+            <TextBox Grid.Column="1" Text="{Binding AddressHex, UpdateSourceTrigger=PropertyChanged}" FontFamily="Consolas" />
+            <TextBlock Grid.Column="2" Text="Value (hex):" VerticalAlignment="Center" Margin="12,0,4,0" />
+            <TextBox Grid.Column="3" Text="{Binding ValueHex, UpdateSourceTrigger=PropertyChanged}" FontFamily="Consolas" />
+        </Grid>
+
+        <StackPanel Orientation="Horizontal" Margin="0,0,0,8"
+                    Visibility="{Binding Console, Converter={StaticResource Ps1OnlyVisibilityConverter}, FallbackValue=Collapsed}">
+            <TextBlock Text="PS1 write width:" VerticalAlignment="Center" Margin="0,0,8,0" />
+            <ComboBox ItemsSource="{Binding Ps1DataTypes}" SelectedItem="{Binding Ps1DataType}" Width="100" />
+        </StackPanel>
+
+        <Button Content="Generate" Command="{Binding GenerateCommand}" HorizontalAlignment="Left" Padding="16,4" Margin="0,0,0,8" />
+
+        <TextBlock Text="{Binding GeneratedCode}" FontFamily="Consolas" FontSize="18" FontWeight="Bold" Margin="0,0,0,4" />
+        <TextBlock Text="{Binding GenerateError}" Foreground="Red" TextWrapping="Wrap" Margin="0,0,0,16" />
+
+        <Separator Margin="0,0,0,16" />
+
+        <TextBlock Text="Decode an existing code" FontWeight="Bold" FontSize="16" Margin="0,0,0,8" />
+        <TextBlock TextWrapping="Wrap" Foreground="Gray" Margin="0,0,0,8"
+                   Text="Paste a code you found online to see what address/value it pokes (FR-5.3). Uses the console selected above." />
+        <Grid Margin="0,0,0,8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBox Grid.Column="0" Text="{Binding PasteCode, UpdateSourceTrigger=PropertyChanged}" FontFamily="Consolas" />
+            <Button Grid.Column="1" Content="Decode" Command="{Binding DecodeCommand}" Margin="8,0,0,0" Padding="16,4" />
+        </Grid>
+
+        <TextBlock Text="{Binding DecodedSummary}" FontFamily="Consolas" TextWrapping="Wrap" Margin="0,0,0,4" />
+        <TextBlock Text="{Binding DecodeError}" Foreground="Red" TextWrapping="Wrap" />
+
+    </StackPanel>
+</UserControl>

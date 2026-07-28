@@ -1,0 +1,8 @@
+<UserControl x:Class="RomMemoryScanner.App.Views.LiveScanView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <StackPanel Margin="16">
+        <TextBlock Text="Live value scan" FontWeight="Bold" FontSize="16" Margin="0,0,0,8" />
+        <TextBlock Text="{Binding PhaseNotice}" TextWrapping="Wrap" Foreground="Gray" MaxWidth="640" HorizontalAlignment="Left" />
+    </StackPanel>
+</UserControl>

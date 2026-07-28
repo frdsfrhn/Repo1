@@ -1,0 +1,27 @@
+{
+  "title": "TEMPLATE - replace with a real, verified title",
+  "console": "Ps1",
+  "region": "USA",
+  "version": "1.0",
+  "checksum": {
+    "crc32": "REPLACE_WITH_REAL_CRC32",
+    "md5": "REPLACE_WITH_REAL_MD5"
+  },
+  "entry_schema_version": 1,
+  "tracked_values": [
+    {
+      "label": "Player HP (EXAMPLE - unverified placeholder address)",
+      "console_address": 2147913728,
+      "data_type": "U16",
+      "byte_order": "LittleEndian",
+      "notes": "PLACEHOLDER. console_address 2147913728 = 0x80069000, inside PS1 main RAM as conventionally addressed (0x80000000-0x801FFFFF), chosen only to demonstrate a valid in-range value. Verify the real address via live-scan (Mode A) or a trusted community source (e.g. GameHacking.org's PS1 code listings) before relying on this entry."
+    },
+    {
+      "label": "Gold (EXAMPLE - unverified placeholder address)",
+      "console_address": 2147913888,
+      "data_type": "U32",
+      "byte_order": "LittleEndian",
+      "notes": "PLACEHOLDER. console_address 2147913888 = 0x800690A0."
+    }
+  ]
+}

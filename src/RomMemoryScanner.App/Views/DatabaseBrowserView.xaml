@@ -1,0 +1,33 @@
+<UserControl x:Class="RomMemoryScanner.App.Views.DatabaseBrowserView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <DockPanel Margin="16">
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
+            <Button Content="Reload" Command="{Binding ReloadCommand}" Padding="12,4" Margin="0,0,8,0" />
+            <Button Content="Import..." Click="ImportButton_Click" Padding="12,4" Margin="0,0,8,0" />
+            <Button Content="Export selected..." Click="ExportButton_Click" Padding="12,4" Margin="0,0,8,0" />
+            <Button Content="Save selected to local database" Click="SaveButton_Click" Padding="12,4" />
+        </StackPanel>
+
+        <TextBlock DockPanel.Dock="Bottom" Text="{Binding StatusMessage}" Foreground="Gray" Margin="0,8,0,0" TextWrapping="Wrap" />
+
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="260" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <ListBox Grid.Column="0" ItemsSource="{Binding Games}" SelectedItem="{Binding SelectedGame}" DisplayMemberPath="Title" Margin="0,0,8,0" />
+
+            <DataGrid Grid.Column="1" ItemsSource="{Binding SelectedGame.TrackedValues}" AutoGenerateColumns="False" IsReadOnly="True">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Label" Binding="{Binding Label}" Width="180" />
+                    <DataGridTextColumn Header="Address" Binding="{Binding ConsoleAddress, StringFormat=X6}" Width="90" />
+                    <DataGridTextColumn Header="Type" Binding="{Binding DataType}" Width="90" />
+                    <DataGridTextColumn Header="Byte order" Binding="{Binding ByteOrder}" Width="100" />
+                    <DataGridTextColumn Header="Notes" Binding="{Binding Notes}" Width="*" />
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+    </DockPanel>
+</UserControl>

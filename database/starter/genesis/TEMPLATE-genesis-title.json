@@ -1,0 +1,27 @@
+{
+  "title": "TEMPLATE - replace with a real, verified title",
+  "console": "Genesis",
+  "region": "USA",
+  "version": "1.0",
+  "checksum": {
+    "crc32": "REPLACE_WITH_REAL_CRC32",
+    "md5": "REPLACE_WITH_REAL_MD5"
+  },
+  "entry_schema_version": 1,
+  "tracked_values": [
+    {
+      "label": "Player HP (EXAMPLE - unverified placeholder address)",
+      "console_address": 16711748,
+      "data_type": "U16",
+      "byte_order": "BigEndian",
+      "notes": "PLACEHOLDER. console_address 16711748 = 0xFF0044, inside Genesis 68K work RAM (0xFF0000-0xFFFFFF), chosen only to demonstrate a valid in-range value. Genesis is 68000-based (big-endian), unlike SNES/PS1 - verify byte order along with the address itself. Verify the real address via live-scan (Mode A) or a trusted community source before relying on this entry."
+    },
+    {
+      "label": "Rings/Items (EXAMPLE - unverified placeholder address)",
+      "console_address": 16715776,
+      "data_type": "Bitflag16",
+      "byte_order": "BigEndian",
+      "notes": "PLACEHOLDER. console_address 16715776 = 0xFF1000. Demonstrates the bitflag data type (FR-4.2), common for inventory/item-owned flags."
+    }
+  ]
+}
