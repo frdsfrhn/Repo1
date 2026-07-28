@@ -74,7 +74,15 @@ public static class Ps1GameSharkCodec
 
         var codeType = (Ps1CodeType)prefixByte;
         uint offset = addressField & 0x00FFFFFF;
-        uint consoleAddress = AddressTranslator.ToConsoleAddress(ConsoleType.Ps1, offset);
+        uint consoleAddress;
+        try
+        {
+            consoleAddress = AddressTranslator.ToConsoleAddress(ConsoleType.Ps1, offset);
+        }
+        catch (AddressOutOfRangeException ex)
+        {
+            throw new FormatException($"'{code}' decodes to an offset outside PS1 RAM: {ex.Message}", ex);
+        }
 
         if (codeType.ValueByteWidth() == 1)
         {

@@ -88,4 +88,14 @@ public class Ps1GameSharkCodecTests
         Assert.Throws<NotSupportedException>(
             () => Ps1GameSharkCodec.Encode(0x80010000, 1, DataType.U32));
     }
+
+    [Fact]
+    public void Decode_RejectsOffsetOutsideRamWindow_AsFormatException_NotAddressOutOfRangeException()
+    {
+        // Regression test: a valid code-type prefix (0x80) with an offset beyond the 2MB RAM
+        // window must surface as FormatException (what TryDecode catches), not leak
+        // AddressOutOfRangeException past the decode boundary.
+        Assert.Throws<FormatException>(() => Ps1GameSharkCodec.Decode("80300000 0001"));
+        Assert.False(Ps1GameSharkCodec.TryDecode("80300000 0001", out _));
+    }
 }

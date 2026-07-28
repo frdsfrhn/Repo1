@@ -4,11 +4,21 @@
              xmlns:local="clr-namespace:RomMemoryScanner.App.Views">
     <UserControl.Resources>
         <local:ConsoleToPs1VisibilityConverter x:Key="Ps1OnlyVisibilityConverter" />
+        <local:ConsoleToFormatPickerVisibilityConverter x:Key="FormatPickerVisibilityConverter" />
     </UserControl.Resources>
     <StackPanel Margin="16">
 
         <TextBlock Text="Console" FontWeight="Bold" Margin="0,0,0,4" />
-        <ComboBox ItemsSource="{Binding AvailableConsoles}" SelectedItem="{Binding Console}" Width="160" HorizontalAlignment="Left" Margin="0,0,0,16" />
+        <ComboBox ItemsSource="{Binding AvailableConsoles}" SelectedItem="{Binding Console}" Width="160" HorizontalAlignment="Left" Margin="0,0,0,8" />
+
+        <StackPanel Orientation="Horizontal" Margin="0,0,0,8"
+                    Visibility="{Binding Console, Converter={StaticResource FormatPickerVisibilityConverter}, FallbackValue=Collapsed}">
+            <TextBlock Text="Format:" VerticalAlignment="Center" Margin="0,0,8,0" />
+            <ComboBox ItemsSource="{Binding AvailableFormats}" SelectedItem="{Binding Format}" Width="140" />
+        </StackPanel>
+        <TextBlock TextWrapping="Wrap" Foreground="Gray" MaxWidth="640" HorizontalAlignment="Left" Margin="0,0,0,16"
+                   Visibility="{Binding Console, Converter={StaticResource FormatPickerVisibilityConverter}, FallbackValue=Collapsed}"
+                   Text="Game Genie intercepts ROM/cartridge reads only — it cannot affect RAM-resident values like HP or inventory (confirmed empirically: a Game Genie-encoded RAM address had no effect in Kega Fusion, while the same address as a Pro Action Replay code worked). For live stat tracking, use Pro Action Replay." />
 
         <TextBlock Text="Generate a code" FontWeight="Bold" FontSize="16" Margin="0,0,0,8" />
         <Grid Margin="0,0,0,8">
