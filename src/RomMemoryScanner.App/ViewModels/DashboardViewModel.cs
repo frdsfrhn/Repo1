@@ -20,6 +20,7 @@ public sealed class DashboardViewModel : ViewModelBase
     private RetroArchClient? _client;
     private ConsoleType _console;
     private string? _gameTitle;
+    private bool _isPolling;
 
     private string _manualLabel = "";
     private string _manualAddressHex = "";
@@ -147,27 +148,45 @@ public sealed class DashboardViewModel : ViewModelBase
             return;
         }
 
-        foreach (TrackedValueRowViewModel row in Rows)
+        // DispatcherTimer.Tick doesn't wait for an async handler to finish before scheduling the
+        // next one — with several rows to poll, a pass can take longer than the tick interval, so
+        // without this guard a new pass would start while the previous one's requests are still
+        // in flight. RetroArchClient now serializes its own requests regardless, but overlapping
+        // passes here would still queue up needless backlog.
+        if (_isPolling)
         {
-            try
+            return;
+        }
+
+        _isPolling = true;
+        try
+        {
+            foreach (TrackedValueRowViewModel row in Rows)
             {
-                if (row.IsFrozen)
+                try
                 {
-                    // Re-assert the frozen value every tick so the game's own writes don't stick (FR-2.6).
-                    await WriteRowAsync(row, row.RawValue).ConfigureAwait(true);
+                    if (row.IsFrozen)
+                    {
+                        // Re-assert the frozen value every tick so the game's own writes don't stick (FR-2.6).
+                        await WriteRowAsync(row, row.RawValue).ConfigureAwait(true);
+                    }
+                    else
+                    {
+                        uint offset = AddressTranslator.ToCoreOffset(_console, row.TrackedValue.ConsoleAddress);
+                        byte[] bytes = await _client.ReadCoreRamAsync(offset, row.DataType.ByteWidth()).ConfigureAwait(true);
+                        row.UpdateFromLiveRead(RawValueCodec.FromBytes(bytes, row.TrackedValue.ByteOrder));
+                    }
                 }
-                else
+                catch (Exception ex)
                 {
-                    uint offset = AddressTranslator.ToCoreOffset(_console, row.TrackedValue.ConsoleAddress);
-                    byte[] bytes = await _client.ReadCoreRamAsync(offset, row.DataType.ByteWidth()).ConfigureAwait(true);
-                    row.UpdateFromLiveRead(RawValueCodec.FromBytes(bytes, row.TrackedValue.ByteOrder));
+                    row.IsLive = false;
+                    row.LastError = ex.Message;
                 }
             }
-            catch (Exception ex)
-            {
-                row.IsLive = false;
-                row.LastError = ex.Message;
-            }
+        }
+        finally
+        {
+            _isPolling = false;
         }
     }
 

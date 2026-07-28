@@ -22,6 +22,19 @@ public sealed class RetroArchClient : IDisposable
     private readonly UdpClient _udpClient;
     private readonly IPEndPoint _endpoint;
 
+    /// <summary>
+    /// Serializes every send+receive round-trip through the shared socket. Without this, two
+    /// concurrent callers (e.g. the Dashboard's poll timer and a Live Scan running at the same
+    /// time, or even the Dashboard's own timer firing again before a slow previous pass finished)
+    /// can each have a request in flight simultaneously — UDP has no way to correlate a reply to
+    /// "the request I just sent" beyond what's in the payload, so replies can get picked up by
+    /// whichever concurrent receive happens to unblock first, misattributing one row's value to
+    /// another's address. This turns "N requests in flight" into "1 request in flight," which
+    /// plus the offset validation in <see cref="ParseReadCoreRamReply"/> is what actually
+    /// guarantees a reply belongs to the request that preceded it.
+    /// </summary>
+    private readonly SemaphoreSlim _requestLock = new(1, 1);
+
     public RetroArchClient(string host = "127.0.0.1", int port = DefaultPort)
     {
         _endpoint = new IPEndPoint(IPAddress.Parse(host), port);
@@ -138,23 +151,35 @@ public sealed class RetroArchClient : IDisposable
 
     private async Task<string?> SendCommandAsync(string command, CancellationToken cancellationToken)
     {
-        byte[] payload = Encoding.ASCII.GetBytes(command);
-        await _udpClient.SendAsync(payload, payload.Length, _endpoint).ConfigureAwait(false);
-
-        using var timeoutCts = new CancellationTokenSource(DefaultTimeout);
-        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
+        await _requestLock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            UdpReceiveResult result = await _udpClient.ReceiveAsync(linkedCts.Token).ConfigureAwait(false);
-            return Encoding.ASCII.GetString(result.Buffer);
+            byte[] payload = Encoding.ASCII.GetBytes(command);
+            await _udpClient.SendAsync(payload, payload.Length, _endpoint).ConfigureAwait(false);
+
+            using var timeoutCts = new CancellationTokenSource(DefaultTimeout);
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
+            try
+            {
+                UdpReceiveResult result = await _udpClient.ReceiveAsync(linkedCts.Token).ConfigureAwait(false);
+                return Encoding.ASCII.GetString(result.Buffer);
+            }
+            catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
+            {
+                return null;
+            }
         }
-        catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
+        finally
         {
-            return null;
+            _requestLock.Release();
         }
     }
 
-    public void Dispose() => _udpClient.Dispose();
+    public void Dispose()
+    {
+        _udpClient.Dispose();
+        _requestLock.Dispose();
+    }
 }
 
 public sealed class RetroArchCommunicationException : Exception
