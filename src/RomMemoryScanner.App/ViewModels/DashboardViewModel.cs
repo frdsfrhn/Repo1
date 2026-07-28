@@ -201,6 +201,11 @@ public sealed class DashboardViewModel : ViewModelBase
             TrackedValueRowViewModel[] rowsSnapshot = Rows.ToArray();
             foreach (TrackedValueRowViewModel row in rowsSnapshot)
             {
+                if (!row.IsEnabled)
+                {
+                    continue;
+                }
+
                 try
                 {
                     if (row.IsFrozen)

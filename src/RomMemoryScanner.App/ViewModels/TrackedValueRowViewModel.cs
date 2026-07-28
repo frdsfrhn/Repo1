@@ -16,6 +16,7 @@ public sealed class TrackedValueRowViewModel : ViewModelBase
     private uint _rawValue;
     private bool _isFrozen;
     private bool _isLive;
+    private bool _isEnabled = true;
     private string? _lastError;
 
     public TrackedValueRowViewModel(TrackedValue trackedValue, Func<TrackedValueRowViewModel, uint, Task> writeAsync)
@@ -62,6 +63,13 @@ public sealed class TrackedValueRowViewModel : ViewModelBase
     {
         get => _isFrozen;
         set => SetField(ref _isFrozen, value);
+    }
+
+    /// <summary>When off, this row is skipped by the poll loop entirely (no read or write) — pauses tracking without removing the row.</summary>
+    public bool IsEnabled
+    {
+        get => _isEnabled;
+        set => SetField(ref _isEnabled, value);
     }
 
     /// <summary>Called by DashboardViewModel after a successful live read; does not trigger a write-back.</summary>

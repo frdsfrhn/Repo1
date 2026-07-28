@@ -45,6 +45,7 @@
         <DataGrid ItemsSource="{Binding Rows}" SelectedItem="{Binding SelectedRow}" AutoGenerateColumns="False" CanUserAddRows="False"
                   IsReadOnly="False" GridLinesVisibility="Horizontal">
             <DataGrid.Columns>
+                <DataGridCheckBoxColumn Header="Enabled" Binding="{Binding IsEnabled}" Width="55" />
                 <DataGridTextColumn Header="Label" Binding="{Binding Label}" IsReadOnly="True" Width="180" />
                 <DataGridTextColumn Header="Address" Binding="{Binding AddressHex}" IsReadOnly="True" Width="90" />
                 <DataGridTextColumn Header="Type" Binding="{Binding DataType}" IsReadOnly="True" Width="80" />
