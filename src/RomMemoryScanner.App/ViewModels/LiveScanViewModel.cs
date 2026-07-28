@@ -1,16 +1,221 @@
+using System.Collections.ObjectModel;
+using RomMemoryScanner.Core.Models;
+using RomMemoryScanner.Core.Numeric;
+using RomMemoryScanner.Core.RetroArch;
+using RomMemoryScanner.Core.Scanning;
+
 namespace RomMemoryScanner.App.ViewModels;
 
 /// <summary>
-/// Placeholder for the Mode A value-scan workspace (FR-2.4): initial scan against a known value,
-/// then repeated "increased/decreased/changed/unchanged" narrowing passes until a small candidate
-/// list remains. Deliberately not implemented yet — per the requirements doc's locked phasing
-/// (§9), Phase 1 ships RetroArch integration + static database + dashboard + SNES/Genesis Game
-/// Genie codec only; live value-scan lands in Phase 2 alongside the PS1 GameShark format.
+/// Live value-scan workspace (FR-7.1 view 2, FR-2.4): find an address you don't know yet by
+/// telling the app a value you *do* know (what the game shows on screen), then narrowing across
+/// passes as that value changes in-game. This is how you discover HP/MP/Gold addresses for a game
+/// with no database entry — the Address Database and Cheat Codes tabs need an address up front;
+/// this tab is how you find one in the first place.
 /// </summary>
 public sealed class LiveScanViewModel : ViewModelBase
 {
-    public string PhaseNotice =>
-        "Live value-scan (Cheat Engine-style narrowing) ships in Phase 2, per the locked delivery plan. " +
-        "For now, find addresses by watching community databases (Address Database tab) or by tagging " +
-        "known addresses manually once you've found them another way.";
+    private RetroArchClient? _client;
+    private ConsoleType _console;
+    private MemoryScanner? _scanner;
+
+    private DataType _dataType = DataType.U8;
+    private ByteOrder _byteOrder = ByteOrder.LittleEndian;
+    private string _knownValueText = "";
+    private string _newValueText = "";
+    private ScanComparison _comparison = ScanComparison.Decreased;
+
+    private bool _isConnected;
+    private bool _hasActiveScan;
+    private int _candidateCount;
+    private string? _statusMessage = "Connect to RetroArch on the Game/Process tab first.";
+    private string _tagLabel = "";
+    private ScanCandidate? _selectedCandidate;
+
+    public LiveScanViewModel()
+    {
+        StartScanCommand = new AsyncRelayCommand(StartScanAsync, () => _client is not null && !string.IsNullOrWhiteSpace(KnownValueText));
+        NextScanCommand = new AsyncRelayCommand(NextScanAsync, () => HasActiveScan);
+        ResetCommand = new RelayCommand(_ => Reset(), _ => HasActiveScan);
+        TagSelectedCommand = new RelayCommand(_ => TagSelected(), _ => SelectedCandidate is not null && !string.IsNullOrWhiteSpace(TagLabel));
+    }
+
+    /// <summary>Raised when the user tags a candidate; MainViewModel wires this into the Dashboard (FR-2.5).</summary>
+    public event EventHandler<TrackedValue>? ValueTagged;
+
+    public IEnumerable<DataType> AvailableDataTypes => new[]
+    {
+        DataType.U8, DataType.U16, DataType.U32, DataType.Bcd8, DataType.Bcd16, DataType.Bcd32,
+    };
+
+    public IEnumerable<ByteOrder> AvailableByteOrders => new[] { ByteOrder.LittleEndian, ByteOrder.BigEndian };
+
+    public IEnumerable<ScanComparison> AvailableComparisons => new[]
+    {
+        ScanComparison.Decreased, ScanComparison.Increased, ScanComparison.Changed, ScanComparison.Unchanged, ScanComparison.EqualTo,
+    };
+
+    public DataType DataType { get => _dataType; set => SetField(ref _dataType, value); }
+    public ByteOrder ByteOrder { get => _byteOrder; set => SetField(ref _byteOrder, value); }
+    public string KnownValueText { get => _knownValueText; set => SetField(ref _knownValueText, value); }
+    public string NewValueText { get => _newValueText; set => SetField(ref _newValueText, value); }
+    public ScanComparison Comparison { get => _comparison; set => SetField(ref _comparison, value); }
+
+    public bool IsConnected { get => _isConnected; private set => SetField(ref _isConnected, value); }
+    public bool HasActiveScan { get => _hasActiveScan; private set => SetField(ref _hasActiveScan, value); }
+    public int CandidateCount { get => _candidateCount; private set => SetField(ref _candidateCount, value); }
+    public string? StatusMessage { get => _statusMessage; private set => SetField(ref _statusMessage, value); }
+
+    public string TagLabel { get => _tagLabel; set => SetField(ref _tagLabel, value); }
+    public ScanCandidate? SelectedCandidate { get => _selectedCandidate; set => SetField(ref _selectedCandidate, value); }
+
+    public ObservableCollection<ScanCandidate> Candidates { get; } = new();
+
+    public AsyncRelayCommand StartScanCommand { get; }
+    public AsyncRelayCommand NextScanCommand { get; }
+    public RelayCommand ResetCommand { get; }
+    public RelayCommand TagSelectedCommand { get; }
+
+    public void AttachClient(RetroArchClient? client, ConsoleType console)
+    {
+        _client = client;
+        _console = console;
+        IsConnected = client is not null;
+        Reset();
+        StatusMessage = IsConnected
+            ? $"Ready to scan {console} WRAM."
+            : "Connect to RetroArch on the Game/Process tab first.";
+    }
+
+    private async Task StartScanAsync()
+    {
+        if (_client is null)
+        {
+            return;
+        }
+
+        if (!TryConvertToRaw(KnownValueText, out uint rawValue, out string? error))
+        {
+            StatusMessage = error;
+            return;
+        }
+
+        try
+        {
+            _scanner = new MemoryScanner(new RetroArchSnapshotReader(_client, _console), _console);
+            StatusMessage = "Scanning...";
+            int count = await _scanner.InitialScanAsync(rawValue, DataType, ByteOrder).ConfigureAwait(true);
+            RefreshCandidates();
+            StatusMessage = $"Initial scan found {count} candidate(s).";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Scan failed: {ex.Message}";
+        }
+    }
+
+    private async Task NextScanAsync()
+    {
+        if (_scanner is null)
+        {
+            return;
+        }
+
+        uint? exactValue = null;
+        if (Comparison == ScanComparison.EqualTo)
+        {
+            if (!TryConvertToRaw(NewValueText, out uint rawValue, out string? error))
+            {
+                StatusMessage = error;
+                return;
+            }
+
+            exactValue = rawValue;
+        }
+
+        try
+        {
+            StatusMessage = "Scanning...";
+            int count = await _scanner.NextScanAsync(Comparison, exactValue).ConfigureAwait(true);
+            RefreshCandidates();
+            StatusMessage = $"Narrowed to {count} candidate(s).";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Scan failed: {ex.Message}";
+        }
+    }
+
+    private void TagSelected()
+    {
+        if (SelectedCandidate is null || string.IsNullOrWhiteSpace(TagLabel))
+        {
+            return;
+        }
+
+        var trackedValue = new TrackedValue
+        {
+            Label = TagLabel,
+            ConsoleAddress = SelectedCandidate.ConsoleAddress,
+            DataType = DataType,
+            ByteOrder = ByteOrder,
+            Notes = "Found via live value-scan (FR-2.5).",
+        };
+
+        ValueTagged?.Invoke(this, trackedValue);
+        StatusMessage = $"Tagged '{TagLabel}' at 0x{SelectedCandidate.ConsoleAddress:X6} — now visible on the Dashboard tab.";
+        TagLabel = "";
+    }
+
+    private void Reset()
+    {
+        _scanner?.Reset();
+        _scanner = null;
+        HasActiveScan = false;
+        CandidateCount = 0;
+        Candidates.Clear();
+        SelectedCandidate = null;
+    }
+
+    private void RefreshCandidates()
+    {
+        HasActiveScan = _scanner is not null && _scanner.HasActiveScan;
+        CandidateCount = _scanner?.CandidateCount ?? 0;
+
+        Candidates.Clear();
+        if (_scanner is null)
+        {
+            return;
+        }
+
+        foreach (ScanCandidate candidate in _scanner.GetCandidates())
+        {
+            Candidates.Add(candidate);
+        }
+    }
+
+    private bool TryConvertToRaw(string text, out uint rawValue, out string? error)
+    {
+        error = null;
+        rawValue = 0;
+
+        if (!uint.TryParse(text.Trim(), out uint decimalValue))
+        {
+            error = $"'{text}' is not a valid decimal number.";
+            return false;
+        }
+
+        try
+        {
+            rawValue = DataType is DataType.Bcd8 or DataType.Bcd16 or DataType.Bcd32
+                ? BcdConverter.DecimalToBcd(decimalValue, DataType.ByteWidth())
+                : decimalValue;
+            return true;
+        }
+        catch (Exception ex) when (ex is ArgumentOutOfRangeException or ArgumentException)
+        {
+            error = ex.Message;
+            return false;
+        }
+    }
 }

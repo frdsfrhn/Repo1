@@ -16,7 +16,7 @@
             <TabItem Header="1. Game / Process">
                 <views:ConnectionView DataContext="{Binding Connection}" />
             </TabItem>
-            <TabItem Header="2. Live Scan (Phase 2)">
+            <TabItem Header="2. Live Scan">
                 <views:LiveScanView DataContext="{Binding LiveScan}" />
             </TabItem>
             <TabItem Header="3. Dashboard">

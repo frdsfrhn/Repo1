@@ -8,15 +8,22 @@ generating/decoding console-native cheat codes. Full requirements: [`docs/ROM_Me
 ROM/disc images the user already has. Live memory access only talks to RetroArch's own sanctioned
 network command interface — no process injection or DRM circumvention involved.
 
-## Status: Phase 1 (of 4)
+## Status: Phase 1 (of 4), plus Phase 2's live scan pulled forward
 
 Per the requirements doc's locked delivery plan (§9):
 
-- ✅ **Phase 1** (this drop): RetroArch integration, static address database with import/export,
+- ✅ **Phase 1**: RetroArch integration, static address database with import/export,
   tagged-values dashboard, SNES + Genesis Game Genie codec.
-- ✅ *(pulled forward from Phase 2, since it's the simplest format to validate first — see §8a)*:
+- ✅ *(pulled forward, since it's the simplest format to validate first — see §8a)*:
   PS1 GameShark/Pro Action Replay codec.
-- ⬜ **Phase 2**: Live value-scan workflow (Cheat Engine-style narrowing, FR-2.4).
+- ✅ *(pulled forward from Phase 2)*: SNES/Genesis Pro Action Replay codecs — added after
+  real-world testing showed Game Genie can't affect RAM-resident values (see commit history);
+  PAR is the format that actually works for live stats like HP/inventory.
+- ✅ *(pulled forward from Phase 2)*: **Live value-scan workflow** (FR-2.4) — the Live Scan tab.
+  Give it a known value (e.g. "my HP is 87"), it scans all of WRAM for matches, then narrows
+  across passes as you tell it the value increased/decreased/changed/stayed the same (or give a
+  new known value directly), until one address remains. Tag it and it appears live on the
+  Dashboard (FR-2.5). This is how you find HP/MP/Gold addresses for a game with no database entry.
 - ⬜ **Phase 3**: Standalone-emulator support (Snes9x, DuckStation, etc.) via raw process memory.
 - ⬜ **Phase 4**: Community database sharing conventions, GBA/N64.
 
@@ -28,7 +35,7 @@ src/
   RomMemoryScanner.Core/    Platform-independent logic: models, checksum/ROM ID, address
                             translation, cheat-code codecs, RetroArch UDP client, JSON database.
   RomMemoryScanner.App/     WPF UI (net8.0-windows). Five views per FR-7.1: game/process picker,
-                            live-scan (Phase 2 placeholder), tagged-values dashboard, cheat code
+                            live value-scan, tagged-values dashboard, cheat code
                             generator/decoder, address database browser.
 tests/
   RomMemoryScanner.Tests/   xunit tests for everything in Core, including the SNES/Genesis Game
@@ -61,17 +68,19 @@ dotnet run --project src/RomMemoryScanner.App/RomMemoryScanner.App.csproj
 The `database/` folder is copied next to the built exe automatically (see the `Content` item in
 `RomMemoryScanner.App.csproj`), so `GameDatabaseService` finds it at `AppContext.BaseDirectory\database`.
 
-## Using it (Phase 1)
+## Using it
 
 1. In RetroArch: **Settings > Network > Network Commands** → on. Load a core/game as usual.
 2. In the app's **Game/Process** tab: Connect (defaults to `127.0.0.1:55355`), then browse to your
    ROM/disc image to identify it and match it against the address database.
-3. **Dashboard** tab shows any matched game's tracked values live, with hex/decimal editing and a
-   per-row freeze toggle (FR-2.6).
-4. **Cheat Codes** tab generates/decodes SNES Game Genie, Genesis Game Genie, and PS1
-   GameShark/PAR codes independent of any live connection (FR-5.1-5.3).
-5. **Address Database** tab browses/imports/exports the local JSON database (FR-3.1-3.2).
-
-No address database entry for your game yet? The dashboard and cheat-code tabs work standalone —
-find addresses via RetroArch's own cheat search or a community source, then hand-add them to a
-database JSON file (see `database/README.md`) or wait for Phase 2's live value-scan.
+3. No database entry for your game? Use the **Live Scan** tab: enter a value you can see on
+   screen (e.g. current HP), Start scan, then play a bit so it changes, tell the app how
+   (increased/decreased/changed/unchanged, or a new known value), Next scan — repeat until the
+   candidate list narrows to the address you want, then tag it (FR-2.4/FR-2.5).
+4. **Dashboard** tab shows any matched or tagged tracked values live, with hex/decimal editing and
+   a per-row freeze toggle (FR-2.6).
+5. **Cheat Codes** tab generates/decodes SNES/Genesis Game Genie *and* Pro Action Replay, plus PS1
+   GameShark/PAR, independent of any live connection (FR-5.1-5.3). Game Genie only affects
+   ROM/cartridge reads, not RAM — use Pro Action Replay for live stats like HP/inventory.
+6. **Address Database** tab browses/imports/exports the local JSON database (FR-3.1-3.2). Once
+   you've tagged values via live-scan, export them here to save/share a real database entry.

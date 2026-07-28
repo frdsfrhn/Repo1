@@ -1,5 +1,6 @@
 using System.IO;
 using RomMemoryScanner.Core.Database;
+using RomMemoryScanner.Core.RetroArch;
 
 namespace RomMemoryScanner.App.ViewModels;
 
@@ -22,9 +23,14 @@ public sealed class MainViewModel : ViewModelBase
         {
             if (e.PropertyName is nameof(ConnectionViewModel.IsConnected) or nameof(ConnectionViewModel.SelectedConsole))
             {
-                Dashboard.AttachClient(Connection.IsConnected ? Connection.Client : null, Connection.SelectedConsole);
+                RetroArchClient? client = Connection.IsConnected ? Connection.Client : null;
+                Dashboard.AttachClient(client, Connection.SelectedConsole);
+                LiveScan.AttachClient(client, Connection.SelectedConsole);
             }
         };
+
+        // FR-2.5: an address found via live-scan gets tagged and shows up on the Dashboard immediately.
+        LiveScan.ValueTagged += (_, trackedValue) => Dashboard.AddTrackedValue(trackedValue);
     }
 
     public ConnectionViewModel Connection { get; }
