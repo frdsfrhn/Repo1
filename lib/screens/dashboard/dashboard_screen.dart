@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:showcaseview/showcaseview.dart';
 
 import '../../core/formatters.dart';
 import '../../core/theme.dart';
 import '../../models/lead.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/lead_provider.dart';
 import '../../widgets/app_empty_state.dart';
 import '../agenda/agenda_screen.dart';
@@ -22,10 +24,36 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   final _searchController = TextEditingController();
+  final _newLeadShowcaseKey = GlobalKey();
+  final _agendaShowcaseKey = GlobalKey();
+
+  @override
+  void initState() {
+    super.initState();
+    ShowcaseView.register(
+      onComplete: (index, key) {
+        if (key == _agendaShowcaseKey) {
+          context.read<AppAuthProvider>().markOnboardingSeen();
+        }
+      },
+      // A tester who dismisses early (taps the barrier) shouldn't get
+      // nagged with the same tour again on next launch.
+      onDismiss: (key) => context.read<AppAuthProvider>().markOnboardingSeen(),
+    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final profile = context.read<AppAuthProvider>().profile;
+      if (profile != null && !profile.hasSeenOnboarding) {
+        ShowcaseView.get()
+            .startShowCase([_newLeadShowcaseKey, _agendaShowcaseKey]);
+      }
+    });
+  }
 
   @override
   void dispose() {
     _searchController.dispose();
+    ShowcaseView.get().unregister();
     super.dispose();
   }
 
@@ -37,11 +65,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
       appBar: AppBar(
         title: const Text('Leads'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.event_note_outlined),
-            tooltip: 'Agenda',
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const AgendaScreen()),
+          Showcase(
+            key: _agendaShowcaseKey,
+            title: 'Your agenda',
+            description: 'Upcoming follow-ups, viewings, and move-ins land '
+                'here automatically.',
+            child: IconButton(
+              icon: const Icon(Icons.event_note_outlined),
+              tooltip: 'Agenda',
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const AgendaScreen()),
+              ),
             ),
           ),
           PopupMenuButton<LeadSortOrder>(
@@ -101,12 +135,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Expanded(child: _LeadListBody(provider: leadProvider)),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const LeadFormScreen()),
+      floatingActionButton: Showcase(
+        key: _newLeadShowcaseKey,
+        title: 'Add your first lead',
+        description: 'Track a prospect from first contact to closed deal — '
+            'tap here to get started.',
+        targetBorderRadius: const BorderRadius.all(Radius.circular(16)),
+        child: FloatingActionButton.extended(
+          onPressed: () => Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const LeadFormScreen()),
+          ),
+          icon: const Icon(Icons.add),
+          label: const Text('New lead'),
         ),
-        icon: const Icon(Icons.add),
-        label: const Text('New lead'),
       ),
     );
   }

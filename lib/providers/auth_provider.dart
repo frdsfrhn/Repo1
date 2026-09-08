@@ -73,6 +73,8 @@ class AppAuthProvider extends ChangeNotifier {
 
   Future<void> acceptPdpaConsent() => _authService.recordPdpaConsent();
 
+  Future<void> markOnboardingSeen() => _authService.markOnboardingSeen();
+
   Future<void> signOut() => _authService.signOut();
 
   @override

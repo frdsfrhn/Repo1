@@ -41,6 +41,7 @@ class AppUser {
     required this.createdAt,
     required this.trialStartedAt,
     this.subscriptionStatus = SubscriptionStatus.trial,
+    this.hasSeenOnboarding = false,
   });
 
   final String uid;
@@ -50,6 +51,11 @@ class AppUser {
   final DateTime createdAt;
   final DateTime trialStartedAt;
   final SubscriptionStatus subscriptionStatus;
+
+  /// Whether the dashboard's first-run guided tour (FAB + agenda tooltips)
+  /// has already played for this account. Keyed to the account, not the
+  /// device, so it doesn't replay after a reinstall or on a second device.
+  final bool hasSeenOnboarding;
 
   bool get hasGivenConsent => pdpaConsentAt != null;
 
@@ -65,6 +71,7 @@ class AppUser {
           (data['trialStartedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       subscriptionStatus:
           SubscriptionStatusX.fromWire(data['subscriptionStatus'] as String?),
+      hasSeenOnboarding: data['hasSeenOnboarding'] as bool? ?? false,
     );
   }
 
@@ -76,6 +83,7 @@ class AppUser {
       'createdAt': FieldValue.serverTimestamp(),
       'trialStartedAt': FieldValue.serverTimestamp(),
       'subscriptionStatus': SubscriptionStatus.trial.wireValue,
+      'hasSeenOnboarding': false,
     };
   }
 }

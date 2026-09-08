@@ -106,5 +106,13 @@ class AuthService {
     }, SetOptions(merge: true));
   }
 
+  Future<void> markOnboardingSeen() async {
+    final uid = currentUser?.uid;
+    if (uid == null) return;
+    await _usersRef.doc(uid).set({
+      'hasSeenOnboarding': true,
+    }, SetOptions(merge: true));
+  }
+
   Future<void> signOut() => _auth.signOut();
 }
